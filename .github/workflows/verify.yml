@@ -28,12 +28,14 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install Rust 1.79.0
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: "1.79.0"
+      - name: Install latest Rust
+        run: |
+          rustup update stable
+          rustup default stable
+          rustc --version
+          cargo --version
 
-      - name: Cache cargo / anchor
+      - name: Cache cargo
         uses: actions/cache@v4
         with:
           path: |
@@ -42,14 +44,14 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             fixtures/target/
-          key: ${{ runner.os }}-anchor-0.29.0-${{ hashFiles('fixtures/**/Cargo.toml') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('fixtures/**/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-anchor-0.29.0-
+            ${{ runner.os }}-cargo-
 
-      - name: Install Solana CLI 1.18.26
+      - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.26/install)"
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          sh -c "$(curl -sSfL https://release.solana.com/v1.18.0/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           solana --version
 
