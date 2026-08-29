@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build + deploy Class 1â€“3 insecure fixtures (+ signer secure control).
-# Writes output/deployed_programs.json mapping family/variant â†’ programId.
+# Build + deploy Class 1-3 insecure fixtures (+ signer secure control).
+# Writes output/deployed_programs.json mapping family/variant -> programId.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -85,18 +85,31 @@ for entry in "${PROGRAMS[@]}"; do
   echo "    patched Anchor.toml for $CRATE_NAME"
 
   cp "$KP_OUT" "$KP_DEPLOY"
-  rm -f "$FIX/Cargo.lock" "$FIX/$CRATE_REL/Cargo.lock"
-
-  # Try build, downgrade lockfile v4->v3 on failure and retry (Solana 1.18 platform-tools is Cargo 1.75)
+  rm -f "$FIX/$CRATE_REL/Cargo.lock"
+  rm -f "$FIX/Cargo.lock"
+  # Build from program dir to bypass workspace patch/lock issues
+  pushd "$FIX/$CRATE_REL" >/dev/null
+  # Nuclear: clear any patch that breaks modern cargo (Anchor 0.29 quirk)
+  # (workspace patch already removed, but keep as safety)
   set +e
-  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+  cargo build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
   BUILD_RC=${PIPESTATUS[0]}
   set -e
+  popd >/dev/null
   if [[ $BUILD_RC -ne 0 ]]; then
     if grep -q "lock file version 4 requires" /tmp/build-${CRATE_NAME}.log; then
       downgrade_lockfile
       echo "    retrying cargo build-sbf after downgrade..."
-      cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
+      pushd "$FIX/$CRATE_REL" >/dev/null
+      cargo build-sbf
+      popd >/dev/null
+    elif grep -q "failed to parse manifest" /tmp/build-${CRATE_NAME}.log && grep -q "edition2024" /tmp/build-${CRATE_NAME}.log; then
+      echo "    edition2024 error — trying cargo update + retry..." >&2
+      rm -f "$FIX/$CRATE_REL/Cargo.lock" "$FIX/Cargo.lock"
+      pushd "$FIX/$CRATE_REL" >/dev/null
+      cargo update 2>/dev/null || true
+      cargo build-sbf
+      popd >/dev/null
     else
       echo "cargo build-sbf failed (see /tmp/build-${CRATE_NAME}.log)" >&2
       cat /tmp/build-${CRATE_NAME}.log >&2
