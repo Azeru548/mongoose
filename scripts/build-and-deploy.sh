@@ -47,6 +47,7 @@ DEPLOYED="$OUT/deployed_programs.json"
 echo '{}' > "$DEPLOYED"
 
 cd "$FIX"
+rm -f "$FIX/Cargo.lock"
 
 for entry in "${PROGRAMS[@]}"; do
   IFS='|' read -r CASE_ID CRATE_REL CRATE_NAME EXPECT_CLASS EXPECT_PROVEN <<<"$entry"
