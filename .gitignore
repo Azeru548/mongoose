@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+cache/
+output/
+tmp-run/
+*.log
+data/sealevel-attacks/
+fixtures/target/
+test-ledger/
+verifier_results.json
+output/keys/

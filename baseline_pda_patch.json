@@ -1,0 +1,70 @@
+[
+  {
+    "id": "8-pda-sharing/insecure",
+    "family": "8-pda-sharing",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 1072,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "{\"start\":0,\"end\":1000,\"line\":1,\"column\":0}",
+        "account_name": "unknown",
+        "reasoning": "Unsafe use of `to_account_info()`: The `to_account_info()` function is used to retrieve account information, but it does not properly validate the account data. This can lead to security vulnerabilities such as account manipulation or information leakage.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "8-pda-sharing/recommended",
+    "family": "8-pda-sharing",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 9239,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "./src/lib.rs:12",
+        "account_name": "unknown",
+        "reasoning": "Unsafe dereference of `vault`: The `vault` field is dereferenced without bounds checking, which can lead to a use-after-free vulnerability. To fix this issue, add bounds checking to ensure the `vault` pointer is valid before dereferencing it.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "8-pda-sharing/secure",
+    "family": "8-pda-sharing",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 9119,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  }
+]

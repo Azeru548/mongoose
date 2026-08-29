@@ -1,0 +1,35 @@
+{
+  "name": "otter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Otter — an agent that proves Solana/Anchor vulnerabilities, not just guesses them.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "otter": "tsx src/index.ts otter",
+    "baseline": "tsx src/index.ts baseline",
+    "evaluate": "tsx src/index.ts evaluate --baseline baseline_results.json --otter otter_iter2.json --output comparison_table.md",
+    "extract": "tsx src/index.ts extract",
+    "selftest": "node scripts/run-selftest.mjs",
+    "setup:dataset": "git clone --depth 1 https://github.com/coral-xyz/sealevel-attacks.git data/sealevel-attacks",
+    "otter:inscope": "tsx src/index.ts otter --in-scope --skip-verify --output ./output/otter_results.json",
+    "baseline:inscope": "tsx src/index.ts baseline --in-scope --output ./output/baseline_results.json",
+    "ci:deploy-fixtures": "bash scripts/ci/deploy-fixtures.sh",
+    "ci:prove": "bash scripts/ci/run-prove.sh",
+    "ci:build-deploy": "bash scripts/build-and-deploy.sh",
+    "verify:ci": "tsx src/verifier-ci.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "1.91.8",
+    "dotenv": "^16.4.5",
+    "openai": "^4.56.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "tsx": "^4.7.2",
+    "typescript": "~5.4.5"
+  }
+}

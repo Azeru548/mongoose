@@ -1,0 +1,450 @@
+[
+  {
+    "id": "1-account-data-matching/insecure",
+    "family": "1-account-data-matching",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 4,
+    "in_scope": true,
+    "runtime_ms": 2645,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "account_data_matching_insecure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "c09eac7865f27def866c77a0a5ea2525609980a34b9dd2c5e050baf45510e98d",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "token: AccountInfo<'info> | authority: Signer<'info>, signer",
+          "handler_source": "let token = SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?;\r\n        msg!(\"Your account balance is: {}\", token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 2,
+        "instruction_name": "log_message",
+        "account_name": "token",
+        "reasoning": "The token account is an AccountInfo<'info>' with no owner constraint and no explicit owner check in the handler, allowing any account to be passed as token and potentially bypassing program logic.",
+        "confidence": "HIGH",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "Verifier skipped (--skip-verify). Planned exploit: call log_message passing 'token' owned by the System Program"
+      },
+      {
+        "vulnerability_class": 4,
+        "instruction_name": "log_message",
+        "account_name": "token",
+        "reasoning": "Deterministic: 'token' in 'log_message' has empty has_one and the handler does not bind it to the sibling authority account.",
+        "confidence": "HIGH",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "Class 4 requires multi-account relationship setup beyond current automation."
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "1-account-data-matching/recommended",
+    "family": "1-account-data-matching",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 4,
+    "in_scope": true,
+    "runtime_ms": 9111,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "account_data_matching_recommended",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "9c9cc3bd281612f80d0017d4d75848bdd8e879cdc630f03775637590d191aa32",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "Account<'info, TokenAccount>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": "program_id (Anchor Account<> wrapper)",
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": true,
+              "other_constraints": [
+                "constraint = authority.key == &token.owner"
+              ]
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "token: Account<'info, TokenAccount>, owner=program_id (Anchor Account<> wrapper), anchor-discriminator | authority: Signer<'info>, signer",
+          "handler_source": "msg!(\"Your account balance is: {}\", ctx.accounts.token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: Account<'info, TokenAccount>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  },
+  {
+    "id": "1-account-data-matching/secure",
+    "family": "1-account-data-matching",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 4,
+    "in_scope": true,
+    "runtime_ms": 9970,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "account_data_matching_secure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "bd247f3aa40a8ea972a549896a033c02e93542c71dce1df3238643ff5a65223e",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "token: AccountInfo<'info> | authority: Signer<'info>, signer",
+          "handler_source": "let token = SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?;\r\n        if ctx.accounts.authority.key != &token.owner {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        msg!(\"Your acocunt balance is: {}\", token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 2,
+        "instruction_name": "log_message",
+        "account_name": "token",
+        "reasoning": "The token account is an AccountInfo<'info> with a null owner_constraint and the handler performs no owner validation. This allows any program to pass an arbitrary account as token, potentially bypassing intended ownership checks.",
+        "confidence": "HIGH",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "Verifier skipped (--skip-verify). Planned exploit: call log_message passing 'token' owned by the System Program"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "2-owner-checks/insecure",
+    "family": "2-owner-checks",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 10372,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "owner_checks_insecure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "ce88530cf9665c5cacd642fd8e857c8090a71b4e9b7cef01af606308577f0f19",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "token: AccountInfo<'info> | authority: Signer<'info>, signer",
+          "handler_source": "let token = SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?;\r\n        if ctx.accounts.authority.key != &token.owner {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        msg!(\"Your account balance is: {}\", token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 2,
+        "instruction_name": "log_message",
+        "account_name": "token",
+        "reasoning": "The token account is an AccountInfo<'info> with a null owner_constraint and no explicit owner validation in the handler checks, allowing any account to be passed as the token. This omission can enable unauthorized access or manipulation of the token account.",
+        "confidence": "HIGH",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "Verifier skipped (--skip-verify). Planned exploit: call log_message passing 'token' owned by the System Program"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "2-owner-checks/recommended",
+    "family": "2-owner-checks",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 10150,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "owner_checks_recommended",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "2d86e2028b0de751b15b9c6ff57fdde867fda2e43853a5051d864f43cc68bb03",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "Account<'info, TokenAccount>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": "program_id (Anchor Account<> wrapper)",
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": true,
+              "other_constraints": [
+                "constraint = authority.key == &token.owner"
+              ]
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "token: Account<'info, TokenAccount>, owner=program_id (Anchor Account<> wrapper), anchor-discriminator | authority: Signer<'info>, signer",
+          "handler_source": "msg!(\"Your account balance is: {}\", ctx.accounts.token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: Account<'info, TokenAccount>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  },
+  {
+    "id": "2-owner-checks/secure",
+    "family": "2-owner-checks",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 28625,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "owner_checks_secure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "b3ad9da15be7cd5fe6e2e7a446bd3cfd5f04071e4b93700d2d95c77d4f0c7d93",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [
+            "program owner compared in handler (AccountInfo.owner)",
+            "token-program id owner check in handler"
+          ],
+          "constraint_summary": "token: AccountInfo<'info> | authority: Signer<'info>, signer | handler: program owner compared in handler (AccountInfo.owner); token-program id owner check in handler",
+          "handler_source": "let token = SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?;\r\n        if ctx.accounts.token.owner != &spl_token::ID {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        if ctx.accounts.authority.key != &token.owner {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        msg!(\"Your account balance is: {}\", token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  }
+]

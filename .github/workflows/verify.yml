@@ -1,0 +1,120 @@
+name: Otter Verifier CI
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: otter-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove:
+    name: Build · Deploy · Prove Class 1–3
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo / anchor
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            fixtures/target/
+          key: ${{ runner.os }}-anchor-0.29.0-${{ hashFiles('fixtures/**/Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-anchor-0.29.0-
+
+      - name: Install Solana CLI 1.18.0
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.0/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          solana --version
+
+      - name: Install Anchor CLI 0.29.0
+        run: |
+          if ! command -v anchor >/dev/null 2>&1; then
+            cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked --force
+          fi
+          anchor --version
+
+      - name: Toolchain versions
+        run: |
+          echo "node $(node -v)"
+          solana --version
+          anchor --version
+          rustc --version
+
+      - name: Start solana-test-validator
+        run: |
+          solana-test-validator --reset --quiet > /tmp/validator.log 2>&1 &
+          echo $! > /tmp/validator.pid
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:8899/health | grep -q ok; then
+              echo "validator health=ok"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "validator failed" >&2
+          cat /tmp/validator.log >&2
+          exit 1
+
+      - name: Build and deploy programs
+        run: |
+          chmod +x scripts/build-and-deploy.sh
+          ./scripts/build-and-deploy.sh
+
+      - name: Run Verifier CI
+        env:
+          SOLANA_RPC_URL: http://127.0.0.1:8899
+          OTTER_DEPLOYED_PROGRAMS: ${{ github.workspace }}/output/deployed_programs.json
+          OTTER_VERIFIER_RESULTS: ${{ github.workspace }}/output/verifier_results.json
+          OTTER_SIGNALS_ONLY: "1"
+        run: npm run verify:ci
+
+      - name: Print verifier_results.json
+        if: always()
+        run: |
+          if [[ -f output/verifier_results.json ]]; then
+            echo "===== verifier_results.json ====="
+            cat output/verifier_results.json
+          else
+            echo "verifier_results.json missing" >&2
+          fi
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otter-verifier-results
+          path: |
+            output/deployed_programs.json
+            output/verifier_results.json
+            output/deploy-map.json
+            /tmp/validator.log
+
+      - name: Stop validator
+        if: always()
+        run: |
+          if [[ -f /tmp/validator.pid ]]; then kill "$(cat /tmp/validator.pid)" || true; fi

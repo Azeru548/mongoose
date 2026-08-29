@@ -1,0 +1,644 @@
+[
+  {
+    "id": "0-signer-authorization/insecure",
+    "family": "0-signer-authorization",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 1,
+    "in_scope": true,
+    "runtime_ms": 1930,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "signer_authorization_insecure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "b0edd55ffe5eade3bc3e95e2f1ebb5a05ce5b01d38b6633d7046425d22a3df91",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "authority",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "authority: AccountInfo<'info>",
+          "handler_source": "msg!(\"GM {}\", ctx.accounts.authority.key().to_string());\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "authority: AccountInfo<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "log_message",
+        "account_name": "authority",
+        "reasoning": "The authority account is an AccountInfo<'info> that is not marked as a signer, and the handler contains no checks for a signature or MissingRequiredSignature. Because the account name suggests it should be an authority, this is a high‑confidence missing signer check.",
+        "confidence": "HIGH",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "Verifier skipped (--skip-verify). Planned exploit: call log_message with account 'authority' unsigned"
+      }
+    ]
+  },
+  {
+    "id": "0-signer-authorization/recommended",
+    "family": "0-signer-authorization",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 1,
+    "in_scope": true,
+    "runtime_ms": 9238,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "signer_authorization_recommended",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "4629507f5934fe0d412a572cafccd37a24ce4e2799e3cd08fa0a01db4acb24c7",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "authority: Signer<'info>, signer",
+          "handler_source": "msg!(\"GM {}\", ctx.accounts.authority.key().to_string());\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": []
+  },
+  {
+    "id": "0-signer-authorization/secure",
+    "family": "0-signer-authorization",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 1,
+    "in_scope": true,
+    "runtime_ms": 9989,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "signer_authorization_secure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "4789a650460b3c8c7aa0fc8c0e3d3fc95615e991eae210ccfa097aa70750f554",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "authority",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [
+            "is_signer checked in handler",
+            "MissingRequiredSignature error path"
+          ],
+          "constraint_summary": "authority: AccountInfo<'info> | handler: is_signer checked in handler; MissingRequiredSignature error path",
+          "handler_source": "if !ctx.accounts.authority.is_signer {\r\n            return Err(ProgramError::MissingRequiredSignature);\r\n        }\r\n        msg!(\"GM {}\", ctx.accounts.authority.key().to_string());\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "authority: AccountInfo<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": []
+  },
+  {
+    "id": "2-owner-checks/insecure",
+    "family": "2-owner-checks",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 10122,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "owner_checks_insecure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "ce88530cf9665c5cacd642fd8e857c8090a71b4e9b7cef01af606308577f0f19",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "token: AccountInfo<'info> | authority: Signer<'info>, signer",
+          "handler_source": "let token = SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?;\r\n        if ctx.accounts.authority.key != &token.owner {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        msg!(\"Your account balance is: {}\", token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 2,
+        "instruction_name": "log_message",
+        "account_name": "token",
+        "reasoning": "The token account has no owner constraint and the handler performs no owner check, allowing any program to write to it. This can lead to unauthorized state manipulation.",
+        "confidence": "HIGH",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "Verifier skipped (--skip-verify). Planned exploit: call log_message passing 'token' owned by the System Program"
+      }
+    ]
+  },
+  {
+    "id": "2-owner-checks/recommended",
+    "family": "2-owner-checks",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 9213,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "owner_checks_recommended",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "2d86e2028b0de751b15b9c6ff57fdde867fda2e43853a5051d864f43cc68bb03",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "Account<'info, TokenAccount>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": "program_id (Anchor Account<> wrapper)",
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": true,
+              "other_constraints": [
+                "constraint = authority.key == &token.owner"
+              ]
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "token: Account<'info, TokenAccount>, owner=program_id (Anchor Account<> wrapper), anchor-discriminator | authority: Signer<'info>, signer",
+          "handler_source": "msg!(\"Your account balance is: {}\", ctx.accounts.token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: Account<'info, TokenAccount>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": []
+  },
+  {
+    "id": "2-owner-checks/secure",
+    "family": "2-owner-checks",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 9208,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "owner_checks_secure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "b3ad9da15be7cd5fe6e2e7a446bd3cfd5f04071e4b93700d2d95c77d4f0c7d93",
+      "instructions": [
+        {
+          "name": "log_message",
+          "accounts_struct": "LogMessage",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "token",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [
+            "program owner compared in handler (AccountInfo.owner)",
+            "token-program id owner check in handler"
+          ],
+          "constraint_summary": "token: AccountInfo<'info> | authority: Signer<'info>, signer | handler: program owner compared in handler (AccountInfo.owner); token-program id owner check in handler",
+          "handler_source": "let token = SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?;\r\n        if ctx.accounts.token.owner != &spl_token::ID {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        if ctx.accounts.authority.key != &token.owner {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        msg!(\"Your account balance is: {}\", token.amount);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "LogMessage",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "token: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": []
+  },
+  {
+    "id": "3-type-cosplay/insecure",
+    "family": "3-type-cosplay",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 3,
+    "in_scope": true,
+    "runtime_ms": 10126,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "type_cosplay_insecure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "1fadb5989c69aa9eea573220551327e5494a699f10be959af31b6f39cbde221c",
+      "instructions": [
+        {
+          "name": "update_user",
+          "accounts_struct": "UpdateUser",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "user",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [
+            "program owner compared in handler (AccountInfo.owner)",
+            "manual Borsh deserialize (try_from_slice)",
+            "IllegalOwner error path"
+          ],
+          "constraint_summary": "user: AccountInfo<'info> | authority: Signer<'info>, signer | handler: program owner compared in handler (AccountInfo.owner); manual Borsh deserialize (try_from_slice); IllegalOwner error path",
+          "handler_source": "let user = User::try_from_slice(&ctx.accounts.user.data.borrow()).unwrap();\r\n        if ctx.accounts.user.owner != ctx.program_id {\r\n            return Err(ProgramError::IllegalOwner);\r\n        }\r\n        if user.authority != ctx.accounts.authority.key() {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        msg!(\"GM {}\", user.authority);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "UpdateUser",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "user: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        },
+        {
+          "name": "User",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "authority: Pubkey"
+          ]
+        },
+        {
+          "name": "Metadata",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "account: Pubkey"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 3,
+        "instruction_name": "update_user",
+        "account_name": "user",
+        "reasoning": "The `user` account is an untyped AccountInfo<'info> with no discriminator, and the handler performs no explicit type or discriminant checks. This permits an attacker to supply a different account type, enabling type‑confusion attacks.",
+        "confidence": "HIGH",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "Verifier skipped (--skip-verify). Planned exploit: call update_user passing 'user' with valid owner but wrong discriminator/layout"
+      }
+    ]
+  },
+  {
+    "id": "3-type-cosplay/recommended",
+    "family": "3-type-cosplay",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 3,
+    "in_scope": true,
+    "runtime_ms": 9525,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "type_cosplay_recommended",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "2ae2747b9da3b8b7134d46be67b3cc82de96e6bd783beee252bfbbf3a9643298",
+      "instructions": [
+        {
+          "name": "update_user",
+          "accounts_struct": "UpdateUser",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "user",
+              "rust_type": "Account<'info, User>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": "program_id (Anchor Account<> wrapper)",
+              "has_one": [
+                "authority"
+              ],
+              "seeds": null,
+              "has_discriminator": true,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [],
+          "constraint_summary": "user: Account<'info, User>, owner=program_id (Anchor Account<> wrapper), has_one=authority, anchor-discriminator | authority: Signer<'info>, signer",
+          "handler_source": "msg!(\"GM {}\", ctx.accounts.user.authority);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "UpdateUser",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "user: Account<'info, User>",
+            "authority: Signer<'info>"
+          ]
+        },
+        {
+          "name": "User",
+          "has_anchor_discriminator": true,
+          "fields": [
+            "authority: Pubkey"
+          ]
+        },
+        {
+          "name": "Metadata",
+          "has_anchor_discriminator": true,
+          "fields": [
+            "account: Pubkey"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": []
+  },
+  {
+    "id": "3-type-cosplay/secure",
+    "family": "3-type-cosplay",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 3,
+    "in_scope": true,
+    "runtime_ms": 9768,
+    "extractor": {
+      "program_id": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS",
+      "program_name": "type_cosplay_secure",
+      "source_files": [
+        "lib.rs"
+      ],
+      "source_hash": "994eea36290394f3a46765ec8c86481b4002c3f305795df8609a0fa7719a709e",
+      "instructions": [
+        {
+          "name": "update_user",
+          "accounts_struct": "UpdateUser",
+          "extra_args": [],
+          "accounts": [
+            {
+              "name": "user",
+              "rust_type": "AccountInfo<'info>",
+              "is_signer": false,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            },
+            {
+              "name": "authority",
+              "rust_type": "Signer<'info>",
+              "is_signer": true,
+              "is_mut": false,
+              "owner_constraint": null,
+              "has_one": [],
+              "seeds": null,
+              "has_discriminator": false,
+              "other_constraints": []
+            }
+          ],
+          "handler_checks": [
+            "program owner compared in handler (AccountInfo.owner)",
+            "manual discriminant/type check in handler",
+            "manual Borsh deserialize (try_from_slice)",
+            "IllegalOwner error path"
+          ],
+          "constraint_summary": "user: AccountInfo<'info> | authority: Signer<'info>, signer | handler: program owner compared in handler (AccountInfo.owner); manual discriminant/type check in handler; manual Borsh deserialize (try_from_slice); IllegalOwner error path",
+          "handler_source": "let user = User::try_from_slice(&ctx.accounts.user.data.borrow()).unwrap();\r\n        if ctx.accounts.user.owner != ctx.program_id {\r\n            return Err(ProgramError::IllegalOwner);\r\n        }\r\n        if user.authority != ctx.accounts.authority.key() {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        if user.discriminant != AccountDiscriminant::User {\r\n            return Err(ProgramError::InvalidAccountData);\r\n        }\r\n        msg!(\"GM {}\", user.authority);\r\n        Ok(())"
+        }
+      ],
+      "account_types": [
+        {
+          "name": "UpdateUser",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "user: AccountInfo<'info>",
+            "authority: Signer<'info>"
+          ]
+        },
+        {
+          "name": "User",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "discriminant: AccountDiscriminant",
+            "authority: Pubkey"
+          ]
+        },
+        {
+          "name": "Metadata",
+          "has_anchor_discriminator": false,
+          "fields": [
+            "discriminant: AccountDiscriminant",
+            "account: Pubkey"
+          ]
+        }
+      ]
+    },
+    "extractor_error": null,
+    "api_error": null,
+    "findings": []
+  }
+]

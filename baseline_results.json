@@ -1,0 +1,531 @@
+[
+  {
+    "id": "0-signer-authorization/insecure",
+    "family": "0-signer-authorization",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 1,
+    "in_scope": true,
+    "runtime_ms": 2445,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "signer_authorization_insecure.rs:12",
+        "account_name": "unknown",
+        "reasoning": "Insecure Program Flow: The code does not use any cryptographic functions or keys for secure communication. This makes it vulnerable to man-in-the-middle attacks and other security threats.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "0-signer-authorization/recommended",
+    "family": "0-signer-authorization",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 1,
+    "in_scope": true,
+    "runtime_ms": 9114,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "pub fn log_message(ctx: Context<LogMessage>) -> ProgramResult",
+        "account_name": "unknown",
+        "reasoning": "Missing Authorization Checks: The function `log_message` does not perform any authorization checks before accessing the `authority` account. This can lead to unauthorized access and potential data manipulation or theft.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "ctx.accounts.authority.key().to_string()",
+        "account_name": "unknown",
+        "reasoning": "Unsafe String Operations: The `to_string()` method is used to convert the `Signer` struct into a string. This can lead to potential security issues, such as formatting attacks or unexpected behavior if the `Signer` value is not a valid public key.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "0-signer-authorization/secure",
+    "family": "0-signer-authorization",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 1,
+    "in_scope": true,
+    "runtime_ms": 9613,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "log_message function",
+        "account_name": "unknown",
+        "reasoning": "Missing Input Validation: The function does not validate the input message before logging it. This can lead to potential security vulnerabilities such as SQL injection or command injection attacks.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "1-account-data-matching/insecure",
+    "family": "1-account-data-matching",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 4,
+    "in_scope": true,
+    "runtime_ms": 8855,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "ctx.accounts.token.data.borrow()",
+        "account_name": "unknown",
+        "reasoning": "Insecure deserialization of SplTokenAccount: The `SplTokenAccount` struct is not marked as `#[serde(untagged)]`, so Rust's deserialization features will attempt to deserialize the data into a `SplTokenAccount` instance. However, this can lead to deserialization vulnerabilities if the data is not trusted.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "token: AccountInfo<'info>",
+        "account_name": "unknown",
+        "reasoning": "Unsafe borrow of AccountInfo: The `AccountInfo` struct is borrowed without any bounds, which can lead to a dangling pointer issue if the account is modified or deleted after being accessed.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "token: AccountInfo<'info>",
+        "account_name": "unknown",
+        "reasoning": "Missing bounds on AccountInfo: The `AccountInfo` struct should have bounds to ensure the account is still valid when accessed.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "ctx.accounts.token.data.borrow()",
+        "account_name": "unknown",
+        "reasoning": "Unsafe dereference of AccountInfo: The `AccountInfo` struct is dereferenced without bounds, which can lead to a null pointer dereference issue if the account is modified or deleted after being accessed.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "1-account-data-matching/recommended",
+    "family": "1-account-data-matching",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 4,
+    "in_scope": true,
+    "runtime_ms": 9021,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "derive(Accounts)",
+        "account_name": "unknown",
+        "reasoning": "Missing key derivation: The `derive(Accounts)` macro is used to derive the necessary fields for the `LogMessage` struct. However, it does not include the `authority` field, which is used as a constraint in the `account` field. This can lead to potential security issues, as the `authority` field is not properly derived and checked.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "account_data_matching_recommended::log_message",
+        "account_name": "unknown",
+        "reasoning": "Unsafe usage of `msg!()`: The `msg!()` macro is used to print messages to the log. However, it does not include any error handling or sanitization of input data. This can lead to potential security issues, as malicious inputs can be used to execute arbitrary code or cause denial of service attacks.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "1-account-data-matching/secure",
+    "family": "1-account-data-matching",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 4,
+    "in_scope": true,
+    "runtime_ms": 9106,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "ctx.accounts.token.data.borrow()",
+        "account_name": "unknown",
+        "reasoning": "Unsafe dereference of borrowed pointer: The code dereferences the borrowed pointer `ctx.accounts.token.data.borrow()` without bounds checking or type safety checks. This can lead to a use-after-free or arbitrary code execution vulnerability.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "let token = SplTokenAccount::unpack(&ctx.accounts.token.data.borrow())?",
+        "account_name": "unknown",
+        "reasoning": "Missing type safety checks: The `unpack` function is called on a generic `&AccountData` without any type safety checks. This can lead to a type mismatch or arbitrary code execution vulnerability.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 2,
+        "instruction_name": "if ctx.accounts.authority.key != &token.owner",
+        "account_name": "unknown",
+        "reasoning": "Missing input validation: The code compares a `&AccountKey` with a `&TokenAccount::Owner` without proper type conversion or input validation. This can lead to a type mismatch or arbitrary code execution vulnerability.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "2-owner-checks/insecure",
+    "family": "2-owner-checks",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 9211,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "ctx.accounts.token.data.borrow()",
+        "account_name": "unknown",
+        "reasoning": "Unsafe dereference of borrowed pointer: The code dereferences the borrowed pointer `ctx.accounts.token.data.borrow()` without bounds checking or type safety checks. This can lead to a use-after-free or arbitrary code execution vulnerability.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "ctx.accounts.authority.key != &token.owner",
+        "account_name": "unknown",
+        "reasoning": "Missing type safety checks: The code compares a `Signer<'info>` struct reference with a `&AccountInfo<'info>` reference without type safety checks. This can lead to a type mismatch or null pointer dereference vulnerability.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "2-owner-checks/recommended",
+    "family": "2-owner-checks",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 9008,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "derive(Accounts)",
+        "account_name": "unknown",
+        "reasoning": "Missing key derivation: The `derive(Accounts)` macro is used to derive the necessary fields for the `LogMessage` struct. However, it does not derive the `authority` field, which is used as a constraint in the `account` field. This can lead to potential security issues, as the `authority` field is not properly derived and checked.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "2-owner-checks/secure",
+    "family": "2-owner-checks",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 2,
+    "in_scope": true,
+    "runtime_ms": 8844,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 2,
+        "instruction_name": "./owner_checks_secure.rs",
+        "account_name": "unknown",
+        "reasoning": "Missing error handling for unexpected errors: The function `log_message` does not handle unexpected errors. If an error occurs while unpacking the `SplTokenAccount` or accessing the `owner` field, the function will return `Err(ProgramError::InvalidAccountData)` without providing any additional information about the error.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "3-type-cosplay/insecure",
+    "family": "3-type-cosplay",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 3,
+    "in_scope": true,
+    "runtime_ms": 11608,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  },
+  {
+    "id": "3-type-cosplay/recommended",
+    "family": "3-type-cosplay",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 3,
+    "in_scope": true,
+    "runtime_ms": 13801,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  },
+  {
+    "id": "3-type-cosplay/secure",
+    "family": "3-type-cosplay",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 3,
+    "in_scope": true,
+    "runtime_ms": 12238,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  },
+  {
+    "id": "7-bump-seed-canonicalization/insecure",
+    "family": "7-bump-seed-canonicalization",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 8993,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "set_value function",
+        "account_name": "unknown",
+        "reasoning": "Missing Input Validation: The function does not validate the input parameters (key, new_value, bump) for correctness or sanity. This can lead to unexpected behavior and potential security vulnerabilities.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      },
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "BumpSeed struct",
+        "account_name": "unknown",
+        "reasoning": "Unsafe Memory Access: The BumpSeed struct uses the `Account` trait without specifying the account type, which allows for unsafe memory access if the account type is not properly checked.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "7-bump-seed-canonicalization/recommended",
+    "family": "7-bump-seed-canonicalization",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 9007,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  },
+  {
+    "id": "7-bump-seed-canonicalization/secure",
+    "family": "7-bump-seed-canonicalization",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 8975,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "./program.rs",
+        "account_name": "unknown",
+        "reasoning": "Missing Input Validation: The code does not perform any input validation for the `key`, `new_value`, and `bump` parameters. This can lead to potential security vulnerabilities if malicious inputs are provided.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "8-pda-sharing/insecure",
+    "family": "8-pda-sharing",
+    "variant": "insecure",
+    "label": "vulnerable",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 1072,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "{\"start\":0,\"end\":1000,\"line\":1,\"column\":0}",
+        "account_name": "unknown",
+        "reasoning": "Unsafe use of `to_account_info()`: The `to_account_info()` function is used to retrieve account information, but it does not properly validate the account data. This can lead to security vulnerabilities such as account manipulation or information leakage.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "8-pda-sharing/recommended",
+    "family": "8-pda-sharing",
+    "variant": "recommended",
+    "label": "fixed",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 9239,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [
+      {
+        "vulnerability_class": 1,
+        "instruction_name": "./src/lib.rs:12",
+        "account_name": "unknown",
+        "reasoning": "Unsafe dereference of `vault`: The `vault` field is dereferenced without bounds checking, which can lead to a use-after-free vulnerability. To fix this issue, add bounds checking to ensure the `vault` pointer is valid before dereferencing it.",
+        "confidence": "LOW",
+        "verdict": "UNCONFIRMED",
+        "exploit_transaction": null,
+        "pre_state": null,
+        "post_state": null,
+        "notes": "baseline has no verifier"
+      }
+    ],
+    "dropped_findings": []
+  },
+  {
+    "id": "8-pda-sharing/secure",
+    "family": "8-pda-sharing",
+    "variant": "secure",
+    "label": "fixed",
+    "expected_class": 5,
+    "in_scope": true,
+    "runtime_ms": 9119,
+    "extractor": null,
+    "extractor_error": null,
+    "api_error": null,
+    "findings": [],
+    "dropped_findings": []
+  }
+]
