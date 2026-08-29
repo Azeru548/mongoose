@@ -3,15 +3,15 @@
 # Writes output/deployed_programs.json mapping family/variant â†’ programId.
 set -euo pipefail
 
-# Remove old lockfiles that break cargo build-sbf
-rm -f fixtures/Cargo.lock 2>/dev/null || true
-find fixtures -name "Cargo.lock" -delete 2>/dev/null || true
-
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FIX="$ROOT/fixtures"
 OUT="$ROOT/output"
 RPC="${SOLANA_RPC_URL:-http://127.0.0.1:8899}"
 mkdir -p "$OUT" "$FIX/target/deploy" "$OUT/keys"
+
+# Remove old lockfiles that break cargo build-sbf (v4 vs Solana's older Cargo)
+rm -f "$FIX/Cargo.lock" 2>/dev/null || true
+find "$FIX" -name "Cargo.lock" -delete 2>/dev/null || true
 
 echo "==> Waiting for validator health at $RPC"
 for i in $(seq 1 90); do
@@ -53,6 +53,15 @@ echo '{}' > "$DEPLOYED"
 cd "$FIX"
 rm -f "$FIX/Cargo.lock"
 
+downgrade_lockfile() {
+  local lf="$FIX/Cargo.lock"
+  if [[ -f "$lf" ]] && grep -q "^version = 4" "$lf"; then
+    echo "    downgrading Cargo.lock v4 -> v3 for Solana platform-tools"
+    sed -i.bak -E 's/^version = 4/version = 3/' "$lf"
+    rm -f "${lf}.bak"
+  fi
+}
+
 for entry in "${PROGRAMS[@]}"; do
   IFS='|' read -r CASE_ID CRATE_REL CRATE_NAME EXPECT_CLASS EXPECT_PROVEN <<<"$entry"
   SRC="$FIX/$CRATE_REL/src/lib.rs"
@@ -77,7 +86,23 @@ for entry in "${PROGRAMS[@]}"; do
 
   cp "$KP_OUT" "$KP_DEPLOY"
   rm -f "$FIX/Cargo.lock" "$FIX/$CRATE_REL/Cargo.lock"
-  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
+
+  # Try build, downgrade lockfile v4->v3 on failure and retry (Solana 1.18 platform-tools is Cargo 1.75)
+  set +e
+  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+  BUILD_RC=${PIPESTATUS[0]}
+  set -e
+  if [[ $BUILD_RC -ne 0 ]]; then
+    if grep -q "lock file version 4 requires" /tmp/build-${CRATE_NAME}.log; then
+      downgrade_lockfile
+      echo "    retrying cargo build-sbf after downgrade..."
+      cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
+    else
+      echo "cargo build-sbf failed (see /tmp/build-${CRATE_NAME}.log)" >&2
+      cat /tmp/build-${CRATE_NAME}.log >&2
+      exit $BUILD_RC
+    fi
+  fi
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
   if [[ ! -f "$SO" ]]; then
