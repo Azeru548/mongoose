@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build + deploy Class 1–3 insecure fixtures (+ signer secure control).
-# Writes output/deployed_programs.json mapping family/variant → programId.
+# Build + deploy Class 1â€“3 insecure fixtures (+ signer secure control).
+# Writes output/deployed_programs.json mapping family/variant â†’ programId.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -15,7 +15,6 @@ for i in $(seq 1 90); do
     echo "validator healthy"
     break
   fi
-  # fallback: solana RPC
   if solana cluster-version --url "$RPC" >/dev/null 2>&1; then
     echo "validator reachable via solana CLI"
     break
@@ -61,38 +60,15 @@ for entry in "${PROGRAMS[@]}"; do
   PUBKEY="$(solana-keygen pubkey "$KP_OUT")"
   echo "    program id: $PUBKEY"
 
-  # Replace declare_id!("...");
-  python3 - <<PY
-from pathlib import Path
-import re
-p = Path("$SRC")
-text = p.read_text()
-text2, n = re.subn(
-    r'declare_id!\("[^"]+"\);',
-    f'declare_id!("{PUBKEY}");',
-    text,
-    count=1,
-)
-if n != 1:
-    raise SystemExit(f"failed to patch declare_id in {p}")
-p.write_text(text2)
-PY
+  # Replace declare_id!("..."); in lib.rs using sed
+  sed -i.bak -E "s/declare_id!\(\"[^\"]+\"\);/declare_id!(\"$PUBKEY\");/" "$SRC"
+  rm -f "${SRC}.bak"
+  echo "    patched declare_id in $SRC"
 
   # Keep Anchor.toml in sync for this crate
-  python3 - <<PY
-from pathlib import Path
-import re
-p = Path("$FIX/Anchor.toml")
-text = p.read_text()
-text2, n = re.subn(
-    r'(${CRATE_NAME}\s*=\s*")[^"]+(")',
-    r"\g<1>${PUBKEY}\g<2>",
-    text,
-    count=1,
-)
-p.write_text(text2)
-print(f"patched Anchor.toml entries: {n}")
-PY
+  sed -i.bak -E "s/(${CRATE_NAME}[[:space:]]*=[[:space:]]*\")[^\"]+(\")/\1${PUBKEY}\2/" "$FIX/Anchor.toml"
+  rm -f "${FIX}/Anchor.toml.bak"
+  echo "    patched Anchor.toml for $CRATE_NAME"
 
   cp "$KP_OUT" "$KP_DEPLOY"
   anchor build -p "$CRATE_NAME"

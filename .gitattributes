@@ -1,0 +1,9 @@
+# Ensure LF line endings for shell scripts and source code
+*.sh    text eol=lf
+*.ts    text eol=lf
+*.mjs   text eol=lf
+*.yml   text eol=lf
+*.json  text eol=lf
+*.rs    text eol=lf
+*.toml  text eol=lf
+*.md    text eol=lf
