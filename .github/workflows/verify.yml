@@ -28,10 +28,10 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install Rust 1.78.0 (compatible with Anchor 0.29.0)
+      - name: Install Rust 1.85.0 (edition 2024 support for cargo build-sbf)
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.78.0"
+          toolchain: "1.85.0"
 
       - name: Cache cargo / anchor
         uses: actions/cache@v4
