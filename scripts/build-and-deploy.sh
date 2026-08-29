@@ -72,6 +72,8 @@ for entry in "${PROGRAMS[@]}"; do
   echo "    patched Anchor.toml for $CRATE_NAME"
 
   cp "$KP_OUT" "$KP_DEPLOY"
+  rm -f "$FIX/Cargo.lock" "$FIX/$CRATE_REL/Cargo.lock"
+  cargo update --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>/dev/null || true
   cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
