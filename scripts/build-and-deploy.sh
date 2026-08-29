@@ -3,6 +3,10 @@
 # Writes output/deployed_programs.json mapping family/variant â†’ programId.
 set -euo pipefail
 
+# Remove old lockfiles that break cargo build-sbf
+rm -f fixtures/Cargo.lock 2>/dev/null || true
+find fixtures -name "Cargo.lock" -delete 2>/dev/null || true
+
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 FIX="$ROOT/fixtures"
 OUT="$ROOT/output"

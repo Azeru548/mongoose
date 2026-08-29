@@ -76,6 +76,12 @@ jobs:
           cat /tmp/validator.log >&2
           exit 1
 
+      - name: Clean incompatible lockfiles
+        run: |
+          rm -f fixtures/Cargo.lock
+          find . -name "Cargo.lock" -path "*/fixtures/*" -delete
+          echo "Lockfiles cleaned"
+
       - name: Build and deploy programs
         run: |
           chmod +x scripts/build-and-deploy.sh
