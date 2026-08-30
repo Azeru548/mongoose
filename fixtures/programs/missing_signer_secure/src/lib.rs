@@ -1,26 +1,24 @@
-use anchor_lang::prelude::*;
+use solana_program::{
+    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey,
+};
 
-declare_id!("FdZRQCmitcGr8GtYaEKkgsxEFzGP7uhSvPRZDtGMr6Yp");
+solana_program::declare_id!("FdZRQCmitcGr8GtYaEKkgsxEFzGP7uhSvPRZDtGMr6Yp");
 
-#[program]
-pub mod missing_signer_secure {
-    use super::*;
+entrypoint!(process_instruction);
 
-    pub fn log_message(ctx: Context<LogMessage>) -> Result<()> {
-        require!(ctx.accounts.authority.is_signer, SignerError::MissingSig);
-        msg!("GM {}", ctx.accounts.authority.key());
-        Ok(())
+pub fn process_instruction(
+    _program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    _instruction_data: &[u8],
+) -> ProgramResult {
+    if accounts.is_empty() {
+        return Err(ProgramError::NotEnoughAccountKeys);
     }
-}
-
-#[derive(Accounts)]
-pub struct LogMessage<'info> {
-    /// CHECK: control fixture — signer enforced in handler
-    pub authority: UncheckedAccount<'info>,
-}
-
-#[error_code]
-pub enum SignerError {
-    #[msg("authority must sign")]
-    MissingSig,
+    if !accounts[0].is_signer {
+        msg!("authority must sign");
+        return Err(ProgramError::MissingRequiredSignature);
+    }
+    msg!("GM {}", accounts[0].key);
+    Ok(())
 }

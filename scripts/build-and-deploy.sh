@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build + deploy Class 1-3 insecure fixtures (+ signer secure control).
 # Writes output/deployed_programs.json mapping family/variant -> programId.
-# Uses committed fixtures/Cargo.lock with --locked (pinned indexmap etc. for platform-tools cargo 1.75).
+# Uses committed fixtures/Cargo.lock (native minimal, version 3, compatible with platform-tools cargo 1.75).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -71,13 +71,13 @@ for entry in "${PROGRAMS[@]}"; do
 
   cp "$KP_OUT" "$KP_DEPLOY"
 
-  echo "=== Cargo.lock before build (version 4, indexmap 2.13.1, with -Znext-lockfile-bump) ==="
+  echo "=== Cargo.lock before build (should be version 3) ==="
   head -n 3 "$FIX/Cargo.lock" || true
   grep -A2 'name = "indexmap"' "$FIX/Cargo.lock" | head -n 3 || true
   ls -l "$FIX/Cargo.lock" || true
 
-  echo "    cargo build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked -Znext-lockfile-bump"
-  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked -Znext-lockfile-bump
+  echo "    cargo build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked"
+  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
   if [[ ! -f "$SO" ]]; then

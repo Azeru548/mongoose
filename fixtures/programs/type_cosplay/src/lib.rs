@@ -1,29 +1,29 @@
-use anchor_lang::prelude::*;
+use solana_program::{
+    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, pubkey::Pubkey,
+};
 
-declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
+solana_program::declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
 
-#[program]
-pub mod type_cosplay {
-    use super::*;
+entrypoint!(process_instruction);
 
-    /// Intentionally accepts an UncheckedAccount instead of Account<User>.
-    /// Missing discriminator / type check is the vulnerability (type cosplay).
-    pub fn update_user(ctx: Context<UpdateUser>) -> Result<()> {
-        let data = ctx.accounts.user.try_borrow_data()?;
-        msg!(
-            "accepted unchecked account {} len={} authority={}",
-            ctx.accounts.user.key(),
-            data.len(),
-            ctx.accounts.authority.key()
-        );
-        Ok(())
+pub fn process_instruction(
+    _program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    _instruction_data: &[u8],
+) -> ProgramResult {
+    // Intentionally accepts any AccountInfo without discriminator check — type cosplay
+    if accounts.len() < 2 {
+        return Ok(());
     }
-}
-
-#[derive(Accounts)]
-pub struct UpdateUser<'info> {
-    /// CHECK: vulnerability — should be Account<User> with discriminator
-    /// CHECK: intentionally unchecked / no owner or type validation
-    pub user: UncheckedAccount<'info>,
-    pub authority: Signer<'info>,
+    let user = &accounts[0];
+    let authority = &accounts[1];
+    // Simulate try_borrow_data without type check
+    let data = user.try_borrow_data()?;
+    msg!(
+        "accepted unchecked account {} len={} authority={}",
+        user.key,
+        data.len(),
+        authority.key
+    );
+    Ok(())
 }

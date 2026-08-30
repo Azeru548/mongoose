@@ -1,22 +1,27 @@
-use anchor_lang::prelude::*;
+use solana_program::{
+    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, pubkey::Pubkey,
+};
 
-declare_id!("7sDbfGBWkC5bMEUa9FYiQsAuSAJ2gqL2L54JkXgVNtQC");
+solana_program::declare_id!("7sDbfGBWkC5bMEUa9FYiQsAuSAJ2gqL2L54JkXgVNtQC");
 
-#[program]
-pub mod missing_owner {
-    use super::*;
+entrypoint!(process_instruction);
 
-    /// Intentionally does not verify `data` is owned by this program.
-    pub fn touch(ctx: Context<Touch>) -> Result<()> {
-        let data = &ctx.accounts.data;
-        msg!("touched {} lamports={}", data.key(), data.lamports());
-        Ok(())
+pub fn process_instruction(
+    _program_id: &Pubkey,
+    accounts: &[AccountInfo],
+    _instruction_data: &[u8],
+) -> ProgramResult {
+    // Intentionally does NOT verify data is owned by this program — vulnerability
+    if accounts.len() < 2 {
+        return Ok(());
     }
-}
-
-#[derive(Accounts)]
-pub struct Touch<'info> {
-    /// CHECK: vulnerability — missing owner constraint
-    pub data: UncheckedAccount<'info>,
-    pub authority: Signer<'info>,
+    let data = &accounts[0];
+    let authority = &accounts[1];
+    msg!(
+        "touched {} lamports={} authority={}",
+        data.key(),
+        data.lamports(),
+        authority.key
+    );
+    Ok(())
 }

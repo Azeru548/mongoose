@@ -1,20 +1,12 @@
 [package]
 name = "type_cosplay"
 version = "0.1.0"
-description = "Otter CI fixture: account type confusion"
+description = "Otter CI fixture: type cosplay (native)"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
 name = "type_cosplay"
 
-[features]
-no-entrypoint = []
-no-idl = []
-no-log-ix-name = []
-cpi = ["no-entrypoint"]
-default = []
-
 [dependencies]
-anchor-lang = "0.29.0"
-indexmap = "=2.13.1"
+solana-program = "1.18.26"

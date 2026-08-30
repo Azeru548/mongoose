@@ -1,20 +1,12 @@
 [package]
 name = "missing_owner"
 version = "0.1.0"
-description = "Otter CI fixture: missing owner check"
+description = "Otter CI fixture: missing owner check (native)"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
 name = "missing_owner"
 
-[features]
-no-entrypoint = []
-no-idl = []
-no-log-ix-name = []
-cpi = ["no-entrypoint"]
-default = []
-
 [dependencies]
-anchor-lang = "0.29.0"
-indexmap = "=2.13.1"
+solana-program = "1.18.26"

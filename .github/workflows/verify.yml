@@ -77,17 +77,6 @@ jobs:
           cat /tmp/validator.log >&2
           exit 1
 
-      - name: Debug Cargo.lock
-        run: |
-          echo "=== fixtures/Cargo.lock head ==="
-          head -n 5 fixtures/Cargo.lock || cat fixtures/Cargo.lock | head -n 5
-          echo "=== indexmap ==="
-          grep -A2 'name = "indexmap"' fixtures/Cargo.lock | head -n 5
-          echo "=== git diff ==="
-          git diff --stat || true
-          echo "=== ls ==="
-          ls -l fixtures/Cargo.lock
-
       - name: Build and deploy programs
         run: |
           chmod +x scripts/build-and-deploy.sh
