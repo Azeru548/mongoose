@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mongoose — Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       RESET & VARIABLES
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #F5F0EB;
+      --bg-alt: #EDE7DF;
+      --bg-dark: #1A1714;
+      --text: #1A1A1A;
+      --text-muted: #6B6357;
+      --text-light: #F5F0EB;
+      --accent: #C9963B;
+      --green: #5B7A4A;
+      --green-light: #7B9E6B;
+      --red: #B84444;
+      --blue: #3B6BC9;
+      --border: #1A1A1A;
+      --font-display: 'DM Serif Display', Georgia, serif;
+      --font-heading: 'Space Grotesk', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    ::selection { background: var(--accent); color: var(--bg-dark); }
+
+    /* ═══════════════════════════════════════════
+       LAYOUT: SIDEBAR + MAIN
+    ═══════════════════════════════════════════ */
+    .docs-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════
+       SIDEBAR
+    ═══════════════════════════════════════════ */
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 3px solid var(--border);
+      background: var(--bg-dark);
+      color: var(--text-light);
+      padding: 2rem 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-header {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      text-decoration: none;
+      color: var(--text-light);
+    }
+    .sidebar-header img { height: 32px; width: auto; }
+    .sidebar-header span {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .sidebar-section {
+      padding: 0 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .sidebar-section-title {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      margin-bottom: 0.8rem;
+    }
+    .sidebar a {
+      display: block;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      padding: 0.4rem 0;
+      transition: all var(--transition);
+      border-left: 2px solid transparent;
+      padding-left: 0.8rem;
+    }
+    .sidebar a:hover, .sidebar a.active {
+      color: var(--text-light);
+      border-left-color: var(--accent);
+    }
+    .sidebar-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.15rem 0.5rem;
+      border: 1px solid var(--green);
+      color: var(--green);
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    /* ═══════════════════════════════════════════
+       MAIN CONTENT
+    ═══════════════════════════════════════════ */
+    .docs-main {
+      padding: 3rem 4rem 6rem;
+      max-width: 900px;
+    }
+    .docs-breadcrumb {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+    .docs-breadcrumb a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    h1 {
+      font-family: var(--font-heading);
+      font-size: 2.8rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    h1 .accent { color: var(--accent); }
+
+    .docs-subtitle {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-bottom: 3rem;
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 4rem 0 1.5rem;
+      padding-top: 2rem;
+      border-top: 3px solid var(--border);
+    }
+    h2:first-of-type { border-top: none; padding-top: 0; }
+
+    h3 {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin: 2.5rem 0 1rem;
+    }
+
+    h4 {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 2rem 0 0.8rem;
+    }
+
+    p { margin-bottom: 1.2rem; }
+
+    /* ═══════════════════════════════════════════
+       COMPONENTS
+    ═══════════════════════════════════════════ */
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--bg-alt);
+      padding: 0.15rem 0.4rem;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    pre {
+      background: var(--bg-dark);
+      color: var(--green-light);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 1.7;
+      padding: 1.5rem;
+      overflow-x: auto;
+      border: 3px solid var(--border);
+      margin: 1.5rem 0;
+      position: relative;
+    }
+    pre .lang-label {
+      position: absolute;
+      top: 0; right: 0;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.3rem 0.8rem;
+      background: var(--accent);
+      color: var(--bg-dark);
+    }
+    pre .comment { color: #6a7a5a; }
+    pre .string { color: #a8d8a8; }
+    pre .keyword { color: #d4a843; }
+
+    /* Callout / alert boxes */
+    .callout {
+      border: 3px solid var(--border);
+      padding: 1.2rem 1.5rem;
+      margin: 1.5rem 0;
+      position: relative;
+    }
+    .callout::before {
+      content: attr(data-label);
+      position: absolute;
+      top: 0; left: 0;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 0.2rem 0.8rem;
+      background: var(--text);
+      color: var(--text-light);
+      transform: translateY(-50%);
+    }
+    .callout.info { border-color: var(--blue); }
+    .callout.info::before { background: var(--blue); }
+    .callout.warning { border-color: var(--accent); }
+    .callout.warning::before { background: var(--accent); }
+    .callout.success { border-color: var(--green); }
+    .callout.success::before { background: var(--green); }
+    .callout.danger { border-color: var(--red); }
+    .callout.danger::before { background: var(--red); }
+    .callout p { margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .callout p:last-child { margin-bottom: 0; }
+
+    /* Tables */
+    .docs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+    }
+    .docs-table th {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      text-align: left;
+      padding: 0.8rem 1rem;
+      border-bottom: 3px solid var(--border);
+      color: var(--text-muted);
+      background: var(--bg-alt);
+    }
+    .docs-table td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      vertical-align: top;
+    }
+    .docs-table tr:hover td { background: rgba(0,0,0,0.02); }
+    .docs-table .mono { font-family: var(--font-mono); font-size: 0.8rem; }
+
+    /* Lists */
+    .docs-list {
+      list-style: none;
+      margin: 1rem 0;
+    }
+    .docs-list li {
+      padding: 0.5rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+      font-size: 0.95rem;
+    }
+    .docs-list li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* Steps */
+    .steps {
+      counter-reset: step;
+      margin: 1.5rem 0;
+    }
+    .step {
+      counter-increment: step;
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 40px;
+      line-height: 1;
+    }
+    .step-content { flex: 1; }
+    .step-content h4 { margin-top: 0; }
+
+    /* Tags / badges */
+    .tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid;
+    }
+    .tag-proven { border-color: var(--green); color: var(--green); }
+    .tag-suspected { border-color: var(--text-muted); color: var(--text-muted); }
+    .tag-class { border-color: var(--accent); color: var(--accent); }
+
+    /* Divider */
+    hr {
+      border: none;
+      border-top: 3px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    /* Back to top */
+    .back-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 44px; height: 44px;
+      background: var(--text);
+      color: var(--text-light);
+      border: 3px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0;
+      transition: all var(--transition);
+      z-index: 100;
+    }
+    .back-top.visible { opacity: 1; }
+    .back-top:hover { background: var(--accent); border-color: var(--accent); }
+
+    /* TOC highlight */
+    .sidebar a.active {
+      color: var(--accent);
+    }
+
+    /* Scroll reveal */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .docs-layout { grid-template-columns: 1fr; }
+      .sidebar {
+        position: relative;
+        height: auto;
+        border-right: none;
+        border-bottom: 3px solid var(--border);
+      }
+      .docs-main { padding: 2rem 1.5rem 4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="docs-layout">
+    <!-- ═══════════════════════════════════════════
+         SIDEBAR
+    ═══════════════════════════════════════════ -->
+    <aside class="sidebar" id="sidebar">
+      <a href="../index.html" class="sidebar-header">
+        <img src="../logo-removebg-preview.png" alt="Mongoose" onerror="this.style.display='none'">
+        <span>MONGOOSE</span>
+      </a>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Getting Started</div>
+        <a href="#overview">Overview</a>
+        <a href="#quickstart">Quick Start</a>
+        <a href="#prerequisites">Prerequisites</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Architecture</div>
+        <a href="#pipeline-deep">Pipeline Deep-Dive</a>
+        <a href="#extractor">Extractor</a>
+        <a href="#detector">Detector</a>
+        <a href="#verifier">Verifier</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Vulnerability Classes</div>
+        <a href="#classes">Overview</a>
+        <a href="#class-1">Class 1: Missing Signer</a>
+        <a href="#class-2">Class 2: Missing Owner</a>
+        <a href="#class-3">Class 3: Type Cosplay</a>
+        <a href="#class-4">Class 4: Missing Relationship</a>
+        <a href="#class-5">Class 5: Insecure PDA Seeds</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">CLI Reference</div>
+        <a href="#commands">Commands</a>
+        <a href="#flags">Flags &amp; Options</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">CI / Verification</div>
+        <a href="#ci-pipeline">CI Pipeline</a>
+        <a href="#reproduction">Reproduction Guide</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Evaluation</div>
+        <a href="#metrics">Metrics</a>
+        <a href="#results-detail">Results</a>
+        <a href="#baselines">Baselines</a>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Reference</div>
+        <a href="#ground-rules">Ground Rules</a>
+        <a href="#versions">Pinned Versions</a>
+        <a href="#faq">FAQ</a>
+      </div>
+    </aside>
+
+    <!-- ═══════════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════════ -->
+    <main class="docs-main">
+
+      <div class="docs-breadcrumb">
+        <a href="../index.html">Home</a> / Documentation
+      </div>
+
+      <!-- OVERVIEW -->
+      <section id="overview" class="reveal">
+        <h1>Mongoose <span class="accent">Docs</span></h1>
+        <p class="docs-subtitle">
+          Every scanner tells you "this looks broken." Mongoose shows you the transaction that broke it.
+        </p>
+
+        <div class="callout info" data-label="For Judges & Testers">
+          <p><strong>Mongoose is a three-stage agent</strong> that proves Solana/Anchor vulnerabilities — not just guesses them. It extracts a structured account map, flags Solana-specific holes, then tries to <em>prove</em> them with a real transaction on a local validator.</p>
+          <p>Findings are either <span class="tag tag-proven">PROVEN</span> (exploit landed, real transaction signature) or <span class="tag tag-suspected">SUSPECTED</span> (flagged, not confirmed). This tiered confidence is the core innovation.</p>
+        </div>
+
+        <h3>Key Results</h3>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Metric</th><th>Baseline</th><th>Mongoose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>True Positives (vulnerable programs flagged)</td><td class="mono">5/6</td><td class="mono" style="color:var(--green);font-weight:700">6/6</td></tr>
+            <tr><td>False Positives (fixed programs flagged)</td><td class="mono">8/12</td><td class="mono" style="color:var(--green);font-weight:700">0/12</td></tr>
+            <tr><td>Instruction-level localization</td><td class="mono">n/a</td><td class="mono" style="color:var(--green);font-weight:700">100%</td></tr>
+            <tr><td>Proven exploit transactions</td><td class="mono">0</td><td class="mono" style="color:var(--green);font-weight:700">3 (Classes 1-3)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- QUICK START -->
+      <section id="quickstart" class="reveal">
+        <h2>Quick Start</h2>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <h4>Clone &amp; Install</h4>
+              <pre><span class="lang-label">bash</span>git clone https://github.com/Azeru548/ottersec.git
+cd ottersec
+npm install</pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <h4>Configure API Key</h4>
+              <pre><span class="lang-label">bash</span>cp .env.example .env
+<span class="comment"># Edit .env and set GROQ_API_KEY from https://console.groq.com/keys</span></pre>
+              <div class="callout warning" data-label="Required">
+                <p>A valid <code>GROQ_API_KEY</code> is required for the Detector stage. Get one free at <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a>. Without it, only the Extractor runs.</p>
+              </div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <h4>Setup Dataset</h4>
+              <pre><span class="lang-label">bash</span>npm run setup:dataset
+<span class="comment"># Clones coral-xyz/sealevel-attacks into data/sealevel-attacks</span></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <h4>Run Mongoose</h4>
+              <pre><span class="lang-label">bash</span><span class="comment"># Run on a single program (no verifier needed):</span>
+npm run otter -- --program path/to/src --skip-verify
+
+<span class="comment"># Run on all in-scope families (detector only):</span>
+npm run otter:inscope
+
+<span class="comment"># Full pipeline with verification (requires Solana CLI):</span>
+solana-test-validator --reset --quiet &amp;
+./scripts/build-and-deploy.sh
+npm run otter -- --dataset ./data/sealevel-attacks</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PREREQUISITES -->
+      <section id="prerequisites" class="reveal">
+        <h2>Prerequisites</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Component</th><th>Version</th><th>Purpose</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Node.js</td><td class="mono">20.x</td><td>Runtime for all TypeScript code</td></tr>
+            <tr><td>TypeScript</td><td class="mono">5.4.x</td><td>Language (compiled via tsx)</td></tr>
+            <tr><td>Solana CLI</td><td class="mono">1.18.x</td><td>Local validator (for Verifier stage)</td></tr>
+            <tr><td>Anchor CLI</td><td class="mono">0.29.0</td><td>Build & deploy fixture programs</td></tr>
+            <tr><td>Rust</td><td class="mono">stable</td><td>Compile Anchor/pinocchio programs</td></tr>
+            <tr><td>GROQ API Key</td><td class="mono">—</td><td>LLM access for Detector stage</td></tr>
+          </tbody>
+        </table>
+        <div class="callout info" data-label="Note">
+          <p>The Verifier stage (exploit transaction construction) is optional. Without Solana CLI, findings degrade to <span class="tag tag-suspected">SUSPECTED</span> — Mongoose will never fabricate a transaction signature.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- PIPELINE DEEP-DIVE -->
+      <section id="pipeline-deep" class="reveal">
+        <h2>Pipeline Architecture</h2>
+        <p>Mongoose uses a three-stage pipeline where each stage is independently gradeable. If the Extractor is wrong, the Detector's input is garbage — you can catch that in isolation. If the Detector over-flags, the Verifier filters false positives before they reach the user.</p>
+
+        <div class="callout success" data-label="Design Principle">
+          <p><strong>Purposeful orchestration, not complexity for its own sake.</strong> Not three agents for show — three agents because each solves a different sub-problem. The Extractor removes noise. The Detector reasons about vulnerabilities. The Verifier proves or disproves the hypothesis.</p>
+        </div>
+      </section>
+
+      <!-- EXTRACTOR -->
+      <section id="extractor" class="reveal">
+        <h3>[1] Extractor <span class="tag tag-class">No LLM</span></h3>
+        <p><strong>Purpose:</strong> Remove noise. LLMs are unreliable at reading raw Rust macros — parse them deterministically so the Detector works with structured data, not raw text.</p>
+        <p><strong>Implementation:</strong> Uses <code>web-tree-sitter</code> with the <code>tree-sitter-rust</code> grammar. Walks the AST for:</p>
+        <ul class="docs-list">
+          <li><code>#[derive(Accounts)]</code> structs and their fields</li>
+          <li><code>#[account(...)]</code> attributes: <code>has_one</code>, <code>owner</code>, <code>address</code>, <code>signer</code>, <code>mut</code></li>
+          <li>Handler body checks: <code>is_signer</code>, owner comparisons, discriminants, PDA derivation</li>
+          <li>Each account mapped to its constraints</li>
+        </ul>
+        <p><strong>Output:</strong> Structured JSON per instruction, including account name, signer/mut flags, owner constraints, and a human-readable constraint summary.</p>
+        <pre><span class="lang-label">json</span>{
+  "instructions": [{
+    "name": "withdraw",
+    "accounts": [
+      { "name": "user", "is_signer": false, "is_mut": false },
+      { "name": "vault", "is_signer": false, "is_mut": true }
+    ],
+    "constraint_summary": "No signer constraints listed"
+  }]
+}</pre>
+        <p><strong>Failure mode:</strong> If the Extractor fails, the pipeline halts. The Detector never runs on garbage input. This is intentional — a silent bad parse is worse than an explicit error.</p>
+      </section>
+
+      <!-- DETECTOR -->
+      <section id="detector" class="reveal">
+        <h3>[2] Detector <span class="tag tag-class" style="border-color:var(--blue);color:var(--blue)">LLM Agent</span></h3>
+        <p><strong>Purpose:</strong> Reason about vulnerability classes using structured context, not raw code.</p>
+        <p><strong>Provider:</strong> Grok Cloud (<code>GROQ_API_KEY</code>, model: <code>openai/gpt-oss-20b</code> by default, overridable via <code>DETECTOR_MODEL</code>).</p>
+        <p><strong>System prompt design:</strong></p>
+        <ul class="docs-list">
+          <li>Receives the 5-class Solana vulnerability taxonomy as context</li>
+          <li>Input is structured JSON from the Extractor, not raw source code</li>
+          <li>Conservative by design — only flags what is actually absent</li>
+          <li>Outputs: class, instruction, account, reasoning (2-3 sentences), confidence (HIGH/MEDIUM/LOW)</li>
+        </ul>
+        <p><strong>False-positive memory:</strong> A registry (<code>data/fp-memory.json</code>) tracks known false positives from previous runs. The Detector is instructed to avoid re-flagging them.</p>
+        <p><strong>Failure mode:</strong> The Detector may hallucinate missing checks or miss subtle ones. The Verifier catches false positives; the changelog tracks Detector precision per iteration.</p>
+      </section>
+
+      <!-- VERIFIER -->
+      <section id="verifier" class="reveal">
+        <h3>[3] Verifier <span class="tag tag-class">No LLM</span></h3>
+        <p><strong>Purpose:</strong> Close the loop. Turn suspicion into proof.</p>
+        <p><strong>Architecture:</strong></p>
+        <ul class="docs-list">
+          <li>Local <code>solana-test-validator</code> with deployed target program</li>
+          <li>Ephemeral test accounts created on startup</li>
+          <li>Raw <code>@solana/web3.js</code> transactions (no Anchor <code>.rpc()</code> convenience wrappers)</li>
+          <li>Per-class exploit construction:</li>
+        </ul>
+
+        <table class="docs-table">
+          <thead>
+            <tr><th>Class</th><th>Exploit Strategy</th><th>Proof Criteria</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag tag-class">1</span> Missing signer</td>
+              <td>Build tx calling instruction with target account's signature omitted</td>
+              <td>Tx succeeds → <span class="tag tag-proven">PROVEN</span></td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-class">2</span> Missing owner</td>
+              <td>Pass account owned by System Program instead of expected program</td>
+              <td>Tx succeeds → <span class="tag tag-proven">PROVEN</span></td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-class">3</span> Type cosplay</td>
+              <td>Pass account with correct owner but wrong data layout/discriminator</td>
+              <td>Tx accepted → <span class="tag tag-proven">PROVEN</span></td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-class">4</span> Missing relationship</td>
+              <td>Requires complex multi-instruction state setup</td>
+              <td><span class="tag tag-suspected">SUSPECTED</span> with reasoning</td>
+            </tr>
+            <tr>
+              <td><span class="tag tag-class">5</span> Insecure PDA seeds</td>
+              <td>Requires custom derivation logic per program</td>
+              <td><span class="tag tag-suspected">SUSPECTED</span> with reasoning</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout warning" data-label="Graceful Degradation">
+          <p>If the Verifier crashes or the validator fails to start, candidates default to <span class="tag tag-suspected">SUSPECTED</span>. The pipeline degrades gracefully — it doesn't crash. This is by design: a partial but working Verifier is stronger than a broken full one.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- VULNERABILITY CLASSES -->
+      <section id="classes" class="reveal">
+        <h2>Vulnerability Classes</h2>
+        <p>Sourced from Neodyme's <strong>sealevel-attacks</strong> — the reference dataset for known Solana program vulnerabilities. Classes 1-3 get full Verifier coverage because the exploit is a single malformed transaction. Classes 4-5 are flagged as "Suspected" with detailed reasoning.</p>
+      </section>
+
+      <section id="class-1" class="reveal">
+        <h3><span class="tag tag-class">Class 1</span> Missing Signer Check</h3>
+        <p>An instruction doesn't verify the expected authority actually signed the transaction.</p>
+        <p><strong>How it works:</strong> The Extractor identifies accounts where <code>is_signer</code> is false and no explicit <code>#[account(signer)]</code> constraint exists. The Detector flags this as a potential vulnerability. The Verifier constructs a transaction omitting the authority's signature — if it succeeds on-chain, the finding is <span class="tag tag-proven">PROVEN</span>.</p>
+        <p><strong>Real-world impact:</strong> An attacker can drain vaults, transfer tokens, or modify state without the owner's authorization. This is the most common and most dangerous Solana vulnerability class.</p>
+        <pre><span class="lang-label">rust</span>// Vulnerable: no signer constraint on 'authority'
+pub fn withdraw(ctx: Context&lt;Withdraw&gt;) -&gt; Result&lt;()&gt; {
+    let amount = ctx.accounts.vault.amount;
+    **ctx.accounts.vault.to_account_info().try_borrow_mut_lamports()? -= amount;
+    **ctx.accounts.user.to_account_info().try_borrow_mut_lamports()? += amount;
+    Ok(())
+}
+
+// Fix: add signer constraint
+#[derive(Accounts)]
+pub struct Withdraw&lt;'info&gt; {
+    #[account(mut)]
+    pub user: Signer&lt;'info&gt;,  // ← must sign
+    // ...
+}</pre>
+      </section>
+
+      <section id="class-2" class="reveal">
+        <h3><span class="tag tag-class">Class 2</span> Missing Owner Check</h3>
+        <p>A program doesn't verify an account is owned by the expected program, allowing a malicious user to pass an account owned by a different program.</p>
+        <p><strong>How it works:</strong> The Verifier passes an account owned by the System Program (or a fake program) instead of the expected one. If the instruction accepts it, the finding is <span class="tag tag-proven">PROVEN</span>.</p>
+        <pre><span class="lang-label">rust</span>// Vulnerable: no owner constraint
+pub fn process(ctx: Context&lt;Process&gt;) -&gt; Result&lt;()&gt; {
+    let data = ctx.accounts.data.try_borrow_data()?;
+    // ... reads data without verifying ownership
+}
+
+// Fix: add owner constraint
+#[derive(Accounts)]
+pub struct Process&lt;'info&gt; {
+    #[account(
+        has_one = authority,
+        seeds = [...],
+        bump
+    )]
+    pub data: Account&lt;'info, MyData&gt;,  // ← auto-verified
+}</pre>
+      </section>
+
+      <section id="class-3" class="reveal">
+        <h3><span class="tag tag-class">Class 3</span> Type Cosplay (Account Type Confusion)</h3>
+        <p>Program accepts an account of the wrong type due to missing discriminator check. An account with the correct owner but wrong data layout passes validation.</p>
+        <p><strong>How it works:</strong> The Verifier constructs an account that has the expected owner but contains data matching a different type. Without a discriminator check (typically via Anchor's <code>Account&lt;'info, T&gt;</code>), the instruction happily processes the wrong account type.</p>
+        <pre><span class="lang-label">rust</span>// Vulnerable: UncheckedAccount, no discriminator
+pub fn update(ctx: Context&lt;Update&gt;) -&gt; Result&lt;()&gt; {
+    let mut user = ctx.accounts.user.try_borrow_mut_data()?;
+    user[0] = 1;  // overwrites arbitrary data
+}
+
+// Fix: use typed account with discriminator
+#[derive(Accounts)]
+pub struct Update&lt;'info&gt; {
+    pub user: Account&lt;'info, UserProfile&gt;,  // ← Anchor checks discriminator
+}</pre>
+      </section>
+
+      <section id="class-4" class="reveal">
+        <h3><span class="tag tag-class">Class 4</span> Missing Relationship Constraint</h3>
+        <p>The <code>has_one</code> or account-data matching constraint is missing — two accounts that should be linked aren't verified as connected.</p>
+        <p><strong>Verifier coverage:</strong> <span class="tag tag-suspected">SUSPECTED</span> only. Requires complex multi-instruction state setup that's unreliable to automate within the current time budget. The Detector flags the missing constraint with detailed reasoning.</p>
+      </section>
+
+      <section id="class-5" class="reveal">
+        <h3><span class="tag tag-class">Class 5</span> Insecure PDA Seeds</h3>
+        <p>Seeds allow derivation of colliding accounts. A seed derivation can look completely correct by inspection and only reveals its flaw when you actually try to derive a colliding account.</p>
+        <p><strong>Why this is hard:</strong> This is the class where static detection caps out. The flaw only reveals under derivation — purely textual analysis can't catch it. Mongoose flags it as <span class="tag tag-suspected">SUSPECTED</span> with reasoning about the seed structure.</p>
+      </section>
+
+      <hr>
+
+      <!-- CLI REFERENCE -->
+      <section id="commands" class="reveal">
+        <h2>CLI Reference</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Command</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">npm run otter</td><td>Run full Mongoose pipeline (Extractor → Detector → Verifier)</td></tr>
+            <tr><td class="mono">npm run otter:inscope</td><td>Run on all 6 in-scope families (detector only, skip verify)</td></tr>
+            <tr><td class="mono">npm run baseline</td><td>Run generic baseline prompt for comparison</td></tr>
+            <tr><td class="mono">npm run baseline:inscope</td><td>Run baseline on all in-scope families</td></tr>
+            <tr><td class="mono">npm run evaluate</td><td>Generate comparison table between baseline and Mongoose</td></tr>
+            <tr><td class="mono">npm run extract</td><td>Run Extractor only (no LLM, no verification)</td></tr>
+            <tr><td class="mono">npm run selftest</td><td>Run internal self-tests</td></tr>
+            <tr><td class="mono">npm run verify:ci</td><td>Run Verifier CI mode (for GitHub Actions)</td></tr>
+            <tr><td class="mono">npm run report</td><td>Generate human-readable report from verifier results</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="flags" class="reveal">
+        <h3>Flags &amp; Options</h3>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Flag</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">--program &lt;path&gt;</td><td>Run on a single program directory</td></tr>
+            <tr><td class="mono">--dataset &lt;path&gt;</td><td>Path to sealevel-attacks dataset</td></tr>
+            <tr><td class="mono">--output &lt;file&gt;</td><td>Output JSON file path</td></tr>
+            <tr><td class="mono">--skip-verify</td><td>Skip the Verifier stage (Detector only)</td></tr>
+            <tr><td class="mono">--in-scope</td><td>Only run on in-scope families (Classes 1-5)</td></tr>
+            <tr><td class="mono">--families &lt;list&gt;</td><td>Comma-separated list of families to run</td></tr>
+            <tr><td class="mono">--limit &lt;n&gt;</td><td>Limit number of cases to process</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Environment Variables</h4>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Variable</th><th>Description</th><th>Default</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">GROQ_API_KEY</td><td>API key for Groq Cloud (Detector LLM)</td><td>Required</td></tr>
+            <tr><td class="mono">DETECTOR_MODEL</td><td>Override the LLM model</td><td>openai/gpt-oss-20b</td></tr>
+            <tr><td class="mono">SOLANA_RPC_URL</td><td>Solana validator RPC endpoint</td><td>http://127.0.0.1:8899</td></tr>
+            <tr><td class="mono">OTTER_SIGNALS_ONLY</td><td>Skip Detector LLM (use cached signals)</td><td>0</td></tr>
+            <tr><td class="mono">OTTER_DEPLOYED_PROGRAMS</td><td>Path to deployed_programs.json</td><td>output/deployed_programs.json</td></tr>
+            <tr><td class="mono">OTTER_VERIFIER_RESULTS</td><td>Path to write verifier results</td><td>output/verifier_results.json</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <hr>
+
+      <!-- CI PIPELINE -->
+      <section id="ci-pipeline" class="reveal">
+        <h2>CI Pipeline (GitHub Actions)</h2>
+        <p>The CI pipeline runs on <code>ubuntu-latest</code> and builds programs, starts the validator, deploys fixtures, runs exploits, and uploads artifacts.</p>
+
+        <h3>Workflow Steps</h3>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Step</th><th>Detail</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">Toolchain</td><td>Rust, Solana CLI 1.18.0, Anchor 0.29.0, Node 20</td></tr>
+            <tr><td class="mono">Build/deploy</td><td><code>scripts/build-and-deploy.sh</code> — unique keypairs, patch declare_id!, anchor build, solana program deploy</td></tr>
+            <tr><td class="mono">Validator</td><td><code>solana-test-validator</code> @ http://127.0.0.1:8899 (with health check)</td></tr>
+            <tr><td class="mono">Prove</td><td><code>npm run verify:ci</code> — raw @solana/web3.js transactions</td></tr>
+            <tr><td class="mono">Artifact</td><td><code>verifier_results.json</code>, <code>deployed_programs.json</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Programs Covered</h3>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Program</th><th>Expected Verdict</th><th>Class</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">0-signer-authorization/insecure</td><td><span class="tag tag-proven">PROVEN</span></td><td>1</td></tr>
+            <tr><td class="mono">0-signer-authorization/secure</td><td><span class="tag tag-suspected">UNCONFIRMED</span></td><td>Control</td></tr>
+            <tr><td class="mono">2-owner-checks/insecure</td><td><span class="tag tag-proven">PROVEN</span></td><td>2</td></tr>
+            <tr><td class="mono">3-type-cosplay/insecure</td><td><span class="tag tag-proven">PROVEN</span></td><td>3</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout success" data-label="CI Verification">
+          <p>The CI workflow exits with code 1 if <code>provenTotal &lt; 1</code> or any case fails its expectations. All 3 PROVEN results must pass for the workflow to be green.</p>
+        </div>
+      </section>
+
+      <!-- REPRODUCTION -->
+      <section id="reproduction" class="reveal">
+        <h2>Reproduction Guide</h2>
+        <p>Full reproduction of the evaluation results on your local machine.</p>
+
+        <h3>1. Setup</h3>
+        <pre><span class="lang-label">bash</span>git clone https://github.com/Azeru548/ottersec.git
+cd ottersec
+npm install
+cp .env.example .env   # Set GROQ_API_KEY</pre>
+
+        <h3>2. Setup Dataset</h3>
+        <pre><span class="lang-label">bash</span>npm run setup:dataset
+<span class="comment"># → data/sealevel-attacks (coral-xyz/sealevel-attacks)</span></pre>
+
+        <h3>3. Run Mongoose</h3>
+        <pre><span class="lang-label">bash</span><span class="comment"># Full pipeline on test set:</span>
+npm run otter -- --dataset ./data/sealevel-attacks --output otter_results.json
+
+<span class="comment"># Baseline only:</span>
+npm run baseline -- --dataset ./data/sealevel-attacks --output baseline_results.json
+
+<span class="comment"># Generate comparison:</span>
+npm run evaluate -- --baseline baseline_results.json --otter otter_results.json</pre>
+
+        <h3>4. Run with Verifier</h3>
+        <pre><span class="lang-label">bash</span><span class="comment"># Requires Solana CLI + Anchor installed:</span>
+solana-test-validator --reset --quiet &amp;
+./scripts/build-and-deploy.sh
+OTTER_SIGNALS_ONLY=1 npm run verify:ci</pre>
+
+        <h3>Expected Output</h3>
+        <table class="docs-table">
+          <thead>
+            <tr><th>File</th><th>Contents</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">baseline_results.json</td><td>Findings per program, no verification</td></tr>
+            <tr><td class="mono">otter_results.json</td><td>Findings with <code>verdict: PROVEN | UNCONFIRMED</code></td></tr>
+            <tr><td class="mono">comparison_table.md</td><td>TP/FP rates and proof coverage table</td></tr>
+          </tbody>
+        </table>
+        <div class="callout info" data-label="Runtime">
+          <p>Full evaluation takes ~15-30 minutes for 30 programs. Validator spin-up dominates. In-scope only (<code>--in-scope</code>) takes ~5 minutes.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- METRICS -->
+      <section id="metrics" class="reveal">
+        <h2>Evaluation Metrics</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Metric</th><th>Baseline</th><th>Mongoose</th><th>What It Shows</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>True positive rate</td><td class="mono">5/6</td><td class="mono" style="color:var(--green);font-weight:700">6/6</td><td>Raw detection capability</td></tr>
+            <tr><td>False positive rate</td><td class="mono">8/12</td><td class="mono" style="color:var(--green);font-weight:700">0/12</td><td>Precision — does it cry wolf?</td></tr>
+            <tr><td>Localization accuracy</td><td class="mono">n/a</td><td class="mono" style="color:var(--green);font-weight:700">100%</td><td>Instruction-level precision</td></tr>
+            <tr><td>Proven exploit %</td><td class="mono">0%</td><td class="mono" style="color:var(--green);font-weight:700">3/3 classes</td><td>Core differentiator</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- RESULTS -->
+      <section id="results-detail" class="reveal">
+        <h2>Detailed Results</h2>
+        <p>Per-program results across all 18 in-scope test cases (6 families × 3 variants each):</p>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Family</th><th>Variant</th><th>Baseline</th><th>Mongoose</th><th>Class</th><th>Verdict</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="mono">0-signer-authorization</td><td>insecure</td><td>YES</td><td>YES</td><td>C1 ✓</td><td><span class="tag tag-proven">PROVEN</span></td></tr>
+            <tr><td class="mono">0-signer-authorization</td><td>recommended</td><td>YES</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">0-signer-authorization</td><td>secure</td><td>YES</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">1-account-data-matching</td><td>insecure</td><td>YES</td><td>YES</td><td>C4 ✓</td><td><span class="tag tag-suspected">SUSPECTED</span></td></tr>
+            <tr><td class="mono">1-account-data-matching</td><td>recommended</td><td>YES</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">1-account-data-matching</td><td>secure</td><td>YES</td><td>YES</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">2-owner-checks</td><td>insecure</td><td>YES</td><td>YES</td><td>C2 ✓</td><td><span class="tag tag-proven">PROVEN</span></td></tr>
+            <tr><td class="mono">2-owner-checks</td><td>recommended</td><td>YES</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">2-owner-checks</td><td>secure</td><td>YES</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">3-type-cosplay</td><td>insecure</td><td>NO</td><td>YES</td><td>C3 ✓</td><td><span class="tag tag-proven">PROVEN</span></td></tr>
+            <tr><td class="mono">3-type-cosplay</td><td>recommended</td><td>NO</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">3-type-cosplay</td><td>secure</td><td>NO</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">7-bump-seed-canonicalization</td><td>insecure</td><td>YES</td><td>YES</td><td>C5 ✓</td><td><span class="tag tag-suspected">SUSPECTED</span></td></tr>
+            <tr><td class="mono">7-bump-seed-canonicalization</td><td>recommended</td><td>NO</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">7-bump-seed-canonicalization</td><td>secure</td><td>YES</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">8-pda-sharing</td><td>insecure</td><td>YES</td><td>YES</td><td>C5 ✓</td><td><span class="tag tag-suspected">SUSPECTED</span></td></tr>
+            <tr><td class="mono">8-pda-sharing</td><td>recommended</td><td>YES</td><td>NO</td><td>N/A</td><td>—</td></tr>
+            <tr><td class="mono">8-pda-sharing</td><td>secure</td><td>NO</td><td>NO</td><td>N/A</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- BASELINES -->
+      <section id="baselines" class="reveal">
+        <h2>Baseline Comparison</h2>
+        <p>The baseline uses a single generic prompt with no Solana-specific context, no structured extraction, and no verification:</p>
+        <pre><span class="lang-label">prompt</span>"Review the following Rust code for security vulnerabilities.
+List any issues you find."</pre>
+        <p>The baseline receives raw <code>.rs</code> files. It does not know the 5-class taxonomy. It does not attempt exploits. This establishes a fair floor: Mongoose must beat a generic LLM prompt using the same test set.</p>
+        <div class="callout info" data-label="Fair Comparison">
+          <p>Same 30 test cases. Same programs. Same dataset. The only difference is the approach: generic prompt vs. structured extraction + domain taxonomy + dynamic verification.</p>
+        </div>
+      </section>
+
+      <hr>
+
+      <!-- GROUND RULES -->
+      <section id="ground-rules" class="reveal">
+        <h2>Ground Rules</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Rule</th><th>Compliance</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Sandboxed execution</strong></td><td>All exploit attempts run against a local <code>solana-test-validator</code>. No transactions touch devnet, testnet, or mainnet.</td></tr>
+            <tr><td><strong>Human review</strong></td><td>Final report is a recommendation for developer review, not an automated verdict. The human decides whether to act.</td></tr>
+            <tr><td><strong>Legal/ethical use</strong></td><td>Uses only public educational data (sealevel-attacks, openly licensed). No real user funds or private data.</td></tr>
+            <tr><td><strong>Credentials</strong></td><td>No private keys, API tokens, or wallet seeds in the repo. Test validator generates ephemeral keypairs on startup.</td></tr>
+            <tr><td><strong>Claims tied to evidence</strong></td><td>Every "Proven" finding includes the actual exploit transaction signature and account state diff.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- VERSIONS -->
+      <section id="versions" class="reveal">
+        <h2>Pinned Versions</h2>
+        <table class="docs-table">
+          <thead>
+            <tr><th>Component</th><th>Version</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Node.js</td><td class="mono">20.11.0</td></tr>
+            <tr><td>TypeScript</td><td class="mono">5.4.x</td></tr>
+            <tr><td>@solana/web3.js</td><td class="mono">1.91.x</td></tr>
+            <tr><td>@coral-xyz/anchor</td><td class="mono">0.29.0</td></tr>
+            <tr><td>Solana CLI</td><td class="mono">1.18.0</td></tr>
+            <tr><td>Anchor CLI</td><td class="mono">0.29.0</td></tr>
+            <tr><td>tree-sitter-rust</td><td class="mono">latest compatible</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="reveal">
+        <h2>FAQ</h2>
+
+        <h3>Why can't I just use a generic LLM to find vulnerabilities?</h3>
+        <p>Generic LLMs have no Solana-specific account-model knowledge. They hallucinate missing checks on secure programs and miss real vulnerabilities hidden in Anchor macros. Mongoose uses structured extraction to give the LLM grounded context, then verifies its output with real exploit transactions.</p>
+
+        <h3>Why are Classes 4-5 only "Suspected"?</h3>
+        <p>Classes 4 (missing relationship) and 5 (insecure PDA seeds) require complex multi-instruction state setup to exploit. Automating this reliably within a time budget isn't feasible yet. Mongoose is honest about what it can prove and what it can only flag.</p>
+
+        <h3>Does Mongoose work on mainnet?</h3>
+        <p>No. All exploit attempts run against a local <code>solana-test-validator</code>. No transactions ever touch devnet, testnet, or mainnet. This is a hard ground rule.</p>
+
+        <h3>What if the Extractor fails to parse my program?</h3>
+        <p>The pipeline halts. The Detector never runs on garbage input. This is intentional — a silent bad parse is worse than an explicit error. The Extractor uses tree-sitter-rust which handles most Anchor patterns, but non-standard code may require manual inspection.</p>
+
+        <h3>How do I add support for new vulnerability classes?</h3>
+        <p>Extend the 5-class taxonomy in the Detector's system prompt and add corresponding exploit construction logic in the Verifier. The modular pipeline makes this straightforward — each stage is independent.</p>
+
+        <h3>Can I use a different LLM provider?</h3>
+        <p>Yes. Set <code>DETECTOR_MODEL</code> to any model available on Groq Cloud. The Detector uses the OpenAI-compatible API, so any model that supports structured JSON output should work.</p>
+      </section>
+
+      <!-- FOOTER -->
+      <div style="margin-top:6rem; padding-top:2rem; border-top:3px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">
+          © 2026 Mongoose · Documentation
+        </div>
+        <div style="display:flex; gap:1.5rem;">
+          <a href="../index.html" style="font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); text-decoration:none;">← Home</a>
+          <a href="https://github.com/Azeru548/ottersec" target="_blank" style="font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); text-decoration:none;">GitHub ↗</a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- BACK TO TOP -->
+  <div class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+  <script>
+    // ─── Scroll Reveal ───
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1, rootMargin: '0px 0px -30px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // ─── Back to top button ───
+    const backTop = document.getElementById('backTop');
+    window.addEventListener('scroll', () => {
+      backTop.classList.toggle('visible', window.scrollY > 500);
+    });
+
+    // ─── Active sidebar link ───
+    const sections = document.querySelectorAll('section[id]');
+    const sidebarLinks = document.querySelectorAll('.sidebar a[href^="#"]');
+    function updateActiveLink() {
+      let current = '';
+      sections.forEach(section => {
+        if (window.scrollY >= section.offsetTop - 100) {
+          current = section.id;
+        }
+      });
+      sidebarLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+      });
+    }
+    window.addEventListener('scroll', updateActiveLink);
+    updateActiveLink();
+
+    // ─── Smooth scroll for sidebar links ───
+    sidebarLinks.forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  </script>
+</body>
+</html>

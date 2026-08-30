@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mongoose — Prove Solana Vulnerabilities, Don't Guess Them</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       CSS RESET & VARIABLES
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #F5F0EB;
+      --bg-alt: #EDE7DF;
+      --bg-dark: #1A1714;
+      --text: #1A1A1A;
+      --text-muted: #6B6357;
+      --text-light: #F5F0EB;
+      --accent: #C9963B;
+      --accent-hover: #B8852E;
+      --green: #5B7A4A;
+      --green-light: #7B9E6B;
+      --red: #B84444;
+      --blue: #3B6BC9;
+      --border: #1A1A1A;
+      --border-thick: 3px;
+      --border-thin: 1px;
+      --font-display: 'DM Serif Display', Georgia, serif;
+      --font-heading: 'Space Grotesk', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --font-body: 'Inter', system-ui, sans-serif;
+      --radius: 0px;
+      --shadow: 4px 4px 0px var(--border);
+      --shadow-accent: 4px 4px 0px var(--accent);
+      --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection { background: var(--accent); color: var(--bg-dark); }
+
+    /* ═══════════════════════════════════════════
+       CURSOR FOLLOWER
+    ═══════════════════════════════════════════ */
+    .cursor-follower {
+      position: fixed;
+      width: 20px; height: 20px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transition: transform 0.15s ease, width 0.3s, height 0.3s, border-color 0.3s;
+      transform: translate(-50%, -50%);
+      mix-blend-mode: difference;
+    }
+    .cursor-follower.hovering {
+      width: 50px; height: 50px;
+      border-color: var(--green);
+      background: rgba(91, 122, 74, 0.1);
+    }
+
+    /* ═══════════════════════════════════════════
+       LOADING SCREEN
+    ═══════════════════════════════════════════ */
+    .loader {
+      position: fixed; inset: 0;
+      background: var(--bg-dark);
+      z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader-text {
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-size: 1.5rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+    .loader-bar {
+      width: 200px; height: 2px;
+      background: rgba(255,255,255,0.1);
+      margin-top: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .loader-bar::after {
+      content: '';
+      position: absolute;
+      left: -100%; top: 0;
+      width: 100%; height: 100%;
+      background: var(--accent);
+      animation: loadSlide 1.2s ease-in-out infinite;
+    }
+    @keyframes loadSlide {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    /* ═══════════════════════════════════════════
+       NAVIGATION
+    ═══════════════════════════════════════════ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 1000;
+      padding: 1.2rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: var(--border-thin) solid var(--border);
+      background: rgba(245, 240, 235, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transition: transform 0.3s ease;
+    }
+    nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.06); }
+    .nav-logo {
+      display: flex; align-items: center; gap: 0.8rem;
+      text-decoration: none; color: var(--text);
+    }
+    .nav-logo img { height: 36px; width: auto; }
+    .nav-logo span {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+    .nav-links { display: flex; gap: 2.5rem; align-items: center; }
+    .nav-links a {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-decoration: none;
+      position: relative;
+      padding: 0.3rem 0;
+      transition: color var(--transition);
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0;
+      width: 0; height: 2px;
+      background: var(--accent);
+      transition: width var(--transition);
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-links a:hover::after { width: 100%; }
+    .nav-cta {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 0.6rem 1.5rem;
+      border: var(--border-thick) solid var(--border);
+      background: var(--text);
+      color: var(--text-light);
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+    }
+    .nav-cta:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg-dark);
+      box-shadow: var(--shadow);
+      transform: translate(-2px, -2px);
+    }
+
+    /* ═══════════════════════════════════════════
+       HERO SECTION
+    ═══════════════════════════════════════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8rem 3rem 6rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .hero-left { position: relative; z-index: 2; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--green);
+      border: var(--border-thick) solid var(--green);
+      padding: 0.5rem 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+    .hero h1 {
+      font-family: var(--font-heading);
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 .accent { color: var(--accent); }
+    .hero h1 .strike {
+      text-decoration: line-through;
+      text-decoration-color: var(--red);
+      text-decoration-thickness: 3px;
+      opacity: 0.5;
+    }
+    .hero-subtitle {
+      font-family: var(--font-display);
+      font-size: clamp(1.2rem, 2vw, 1.6rem);
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 520px;
+      margin-bottom: 2.5rem;
+      font-style: italic;
+    }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 1rem 2rem;
+      border: var(--border-thick) solid var(--border);
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .btn-primary {
+      background: var(--text);
+      color: var(--text-light);
+    }
+    .btn-primary:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--bg-dark);
+      box-shadow: var(--shadow);
+      transform: translate(-2px, -2px);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-alt);
+      box-shadow: var(--shadow);
+      transform: translate(-2px, -2px);
+    }
+
+    .hero-right {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .hero-logo-container {
+      position: relative;
+      width: 340px;
+      height: 500px;
+    }
+    .hero-logo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(8px 8px 0px rgba(201, 150, 59, 0.3));
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+    }
+    .hero-logo-bg {
+      position: absolute;
+      width: 280px; height: 280px;
+      border: var(--border-thick) solid var(--accent);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+      opacity: 0.15;
+      animation: rotateBg 20s linear infinite;
+    }
+    @keyframes rotateBg {
+      from { transform: translate(-50%, -50%) rotate(45deg); }
+      to { transform: translate(-50%, -50%) rotate(405deg); }
+    }
+
+    /* Hero stats ticker */
+    .hero-ticker {
+      position: absolute;
+      bottom: 3rem;
+      left: 3rem;
+      right: 3rem;
+      display: flex;
+      gap: 3rem;
+      border-top: var(--border-thin) solid var(--border);
+      padding-top: 1.5rem;
+    }
+    .ticker-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .ticker-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+    }
+    .ticker-value {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCROLL ANIMATIONS
+    ═══════════════════════════════════════════ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-60px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal-left.visible { opacity: 1; transform: translateX(0); }
+    .reveal-right {
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal-right.visible { opacity: 1; transform: translateX(0); }
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .reveal-scale.visible { opacity: 1; transform: scale(1); }
+
+    /* Stagger children */
+    .stagger-children > * { transition-delay: calc(var(--i, 0) * 0.1s); }
+
+    /* ═══════════════════════════════════════════
+       SECTION: MARQUEE
+    ═══════════════════════════════════════════ */
+    .marquee-section {
+      border-top: var(--border-thick) solid var(--border);
+      border-bottom: var(--border-thick) solid var(--border);
+      padding: 1.2rem 0;
+      overflow: hidden;
+      background: var(--text);
+    }
+    .marquee-track {
+      display: flex;
+      animation: marquee 25s linear infinite;
+      white-space: nowrap;
+    }
+    .marquee-item {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-light);
+      padding: 0 3rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .marquee-item .dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: PROBLEM
+    ═══════════════════════════════════════════ */
+    .section {
+      padding: 7rem 3rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .section-full {
+      padding: 7rem 3rem;
+    }
+    .section-dark {
+      background: var(--bg-dark);
+      color: var(--text-light);
+    }
+    .section-alt {
+      background: var(--bg-alt);
+    }
+    .section-accent {
+      background: var(--accent);
+      color: var(--bg-dark);
+    }
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 1.5rem;
+      margin-bottom: 4rem;
+      border-bottom: var(--border-thick) solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+    .section-dark .section-header { border-color: rgba(255,255,255,0.2); }
+    .section-num {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+    }
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .section-title .italic {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: PROBLEM STATEMENT
+    ═══════════════════════════════════════════ */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      margin-bottom: 4rem;
+    }
+    .problem-quote {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+      line-height: 1.4;
+      color: var(--text);
+      position: relative;
+      padding-left: 2rem;
+      border-left: var(--border-thick) solid var(--accent);
+    }
+    .problem-body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+    .problem-body p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+    .problem-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    .problem-stat {
+      padding: 2rem;
+      border: var(--border-thin) solid var(--border);
+      text-align: center;
+    }
+    .problem-stat-num {
+      font-family: var(--font-heading);
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .problem-stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: PIPELINE / HOW IT WORKS
+    ═══════════════════════════════════════════ */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    .pipeline-card {
+      border: var(--border-thick) solid var(--border);
+      padding: 2.5rem;
+      position: relative;
+      transition: all var(--transition);
+      background: var(--bg);
+    }
+    .pipeline-card:hover {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      z-index: 2;
+      box-shadow: 8px 8px 0 var(--accent);
+      transform: translate(-4px, -4px);
+    }
+    .pipeline-card:hover .pipe-num { color: var(--accent); }
+    .pipeline-card:hover .pipe-desc { color: rgba(255,255,255,0.7); }
+    .pipeline-card:hover .pipe-tag { border-color: var(--accent); color: var(--accent); }
+    .pipe-num {
+      font-family: var(--font-heading);
+      font-size: 4rem;
+      font-weight: 700;
+      color: var(--bg-alt);
+      line-height: 1;
+      margin-bottom: 1rem;
+      transition: color var(--transition);
+    }
+    .pipe-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      border: var(--border-thin) solid var(--border);
+      padding: 0.3rem 0.8rem;
+      margin-bottom: 1.5rem;
+      transition: all var(--transition);
+    }
+    .pipe-title {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      letter-spacing: -0.01em;
+    }
+    .pipe-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      transition: color var(--transition);
+    }
+    .pipe-features {
+      margin-top: 1.5rem;
+      list-style: none;
+    }
+    .pipe-features li {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.4rem 0;
+      border-bottom: var(--border-thin) solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .pipeline-card:hover .pipe-features li { border-color: rgba(255,255,255,0.1); }
+    .pipe-features li::before {
+      content: '→';
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: VULNERABILITY CLASSES
+    ═══════════════════════════════════════════ */
+    .vuln-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+    }
+    .vuln-card {
+      border: var(--border-thin) solid var(--border);
+      padding: 2rem 1.5rem;
+      position: relative;
+      transition: all var(--transition);
+      cursor: default;
+    }
+    .vuln-card:hover {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      z-index: 2;
+    }
+    .vuln-num {
+      font-family: var(--font-heading);
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--bg-alt);
+      margin-bottom: 0.8rem;
+    }
+    .vuln-card:hover .vuln-num { color: var(--accent); }
+    .vuln-name {
+      font-family: var(--font-heading);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+    }
+    .vuln-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .vuln-card:hover .vuln-desc { color: rgba(255,255,255,0.7); }
+    .vuln-badge {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.25rem 0.6rem;
+      border: var(--border-thin) solid var(--green);
+      color: var(--green);
+    }
+    .vuln-badge.suspected {
+      border-color: var(--text-muted);
+      color: var(--text-muted);
+    }
+    .vuln-card:hover .vuln-badge { border-color: var(--accent); color: var(--accent); }
+
+    /* ═══════════════════════════════════════════
+       SECTION: RESULTS / BENCHMARKS
+    ═══════════════════════════════════════════ */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .result-card {
+      padding: 2.5rem 2rem;
+      border: var(--border-thick) solid var(--border);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .result-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--accent);
+      transform: scaleX(0);
+      transition: transform 0.6s ease;
+    }
+    .result-card:hover::before { transform: scaleX(1); }
+    .result-value {
+      font-family: var(--font-heading);
+      font-size: 3.5rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .result-value.green { color: var(--green); }
+    .result-value.accent { color: var(--accent); }
+    .result-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+    }
+    .result-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.8rem;
+      line-height: 1.5;
+    }
+
+    /* Comparison table */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 3rem;
+      font-size: 0.9rem;
+    }
+    .compare-table th {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      text-align: left;
+      padding: 1rem;
+      border-bottom: var(--border-thick) solid var(--border);
+      color: var(--text-muted);
+    }
+    .compare-table td {
+      padding: 1rem;
+      border-bottom: var(--border-thin) solid var(--border);
+      vertical-align: top;
+    }
+    .compare-table tr:hover td { background: var(--bg-alt); }
+    .compare-table .mono {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    .badge-proven {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.2rem 0.6rem;
+      background: var(--green);
+      color: white;
+    }
+    .badge-suspected {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.2rem 0.6rem;
+      background: var(--text-muted);
+      color: white;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: ARCHITECTURE DIAGRAM
+    ═══════════════════════════════════════════ */
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 3rem 0;
+      flex-wrap: wrap;
+    }
+    .arch-node {
+      border: var(--border-thick) solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      min-width: 180px;
+      background: var(--bg);
+      transition: all var(--transition);
+    }
+    .arch-node:hover {
+      background: var(--accent);
+      color: var(--bg-dark);
+      box-shadow: var(--shadow);
+      transform: translate(-2px, -2px);
+    }
+    .arch-node-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.3rem;
+    }
+    .arch-node-sub {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .arch-node:hover .arch-node-sub { color: var(--bg-dark); }
+    .arch-arrow {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      color: var(--accent);
+      padding: 0 1rem;
+      font-weight: 700;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: COMPETITIVE
+    ═══════════════════════════════════════════ */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    .comp-card {
+      border: var(--border-thin) solid var(--border);
+      padding: 2rem;
+      transition: all var(--transition);
+    }
+    .comp-card:hover {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      z-index: 2;
+    }
+    .comp-card.featured {
+      background: var(--text);
+      color: var(--text-light);
+      border-color: var(--text);
+    }
+    .comp-card.featured .comp-gap { color: var(--accent); }
+    .comp-name {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .comp-what {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+    .comp-card:hover .comp-what { color: rgba(255,255,255,0.7); }
+    .comp-gap {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--red);
+      line-height: 1.5;
+    }
+    .comp-card:hover .comp-gap { color: var(--accent); }
+
+    /* ═══════════════════════════════════════════
+       SECTION: TRAJECTORY / EXAMPLE
+    ═══════════════════════════════════════════ */
+    .trajectory-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+    }
+    .traj-step {
+      border: var(--border-thin) solid var(--border);
+      padding: 2rem;
+      position: relative;
+    }
+    .traj-step-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .traj-step-num {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .traj-step-title {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .traj-code {
+      background: var(--bg-dark);
+      color: var(--green-light);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      line-height: 1.7;
+      padding: 1.2rem;
+      overflow-x: auto;
+      border: var(--border-thin) solid var(--border);
+    }
+    .traj-code .key { color: var(--accent); }
+    .traj-code .str { color: #a8d8a8; }
+    .traj-code .num { color: #d4a843; }
+    .traj-verdict {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border: var(--border-thick) solid var(--green);
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .traj-verdict-icon {
+      width: 24px; height: 24px;
+      background: var(--green);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .traj-verdict-text {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--green);
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: TECH STACK
+    ═══════════════════════════════════════════ */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .stack-item {
+      border: var(--border-thin) solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: all var(--transition);
+    }
+    .stack-item:hover {
+      background: var(--accent);
+      color: var(--bg-dark);
+    }
+    .stack-icon {
+      font-size: 2rem;
+      margin-bottom: 0.8rem;
+    }
+    .stack-name {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+    }
+    .stack-role {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .stack-item:hover .stack-role { color: var(--bg-dark); }
+
+    /* ═══════════════════════════════════════════
+       SECTION: GROUND RULES
+    ═══════════════════════════════════════════ */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0;
+    }
+    .rule-card {
+      border: var(--border-thin) solid var(--border);
+      padding: 2rem;
+      display: flex;
+      gap: 1.2rem;
+      align-items: flex-start;
+      transition: all var(--transition);
+    }
+    .rule-card:hover { background: var(--bg-alt); }
+    .rule-icon {
+      width: 36px; height: 36px;
+      border: var(--border-thick) solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .rule-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 0.3rem;
+    }
+    .rule-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION: CTA / FOOTER
+    ═══════════════════════════════════════════ */
+    .cta-section {
+      text-align: center;
+      padding: 8rem 3rem;
+      border-top: var(--border-thick) solid var(--border);
+    }
+    .cta-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+    }
+    .cta-subtitle {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-style: italic;
+      color: var(--text-muted);
+      margin-bottom: 3rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .cta-actions { display: flex; gap: 1rem; justify-content: center; }
+
+    footer {
+      border-top: var(--border-thick) solid var(--border);
+      padding: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .footer-left {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    /* ═══════════════════════════════════════════
+       SCROLL PROGRESS
+    ═══════════════════════════════════════════ */
+    .scroll-progress {
+      position: fixed;
+      top: 0; left: 0;
+      width: 0%; height: 3px;
+      background: var(--accent);
+      z-index: 10001;
+      transition: width 0.1s linear;
+    }
+
+    /* ═══════════════════════════════════════════
+       MOBILE NAV TOGGLE
+    ═══════════════════════════════════════════ */
+    .nav-toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+    }
+    .nav-toggle span {
+      display: block;
+      width: 24px; height: 2px;
+      background: var(--text);
+      margin: 5px 0;
+      transition: all 0.3s ease;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+      .hero-grid { grid-template-columns: 1fr; text-align: center; }
+      .hero-right { display: none; }
+      .hero-subtitle { margin-left: auto; margin-right: auto; }
+      .hero-actions { justify-content: center; }
+      .hero-ticker { justify-content: center; }
+      .pipeline-grid { grid-template-columns: 1fr; }
+      .vuln-grid { grid-template-columns: repeat(2, 1fr); }
+      .results-grid { grid-template-columns: repeat(2, 1fr); }
+      .comp-grid { grid-template-columns: 1fr; }
+      .trajectory-grid { grid-template-columns: 1fr; }
+      .stack-grid { grid-template-columns: repeat(2, 1fr); }
+      .rules-grid { grid-template-columns: 1fr; }
+      .problem-grid { grid-template-columns: 1fr; }
+      .arch-flow { flex-direction: column; }
+      .arch-arrow { transform: rotate(90deg); }
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .nav-links { display: none; }
+      .nav-toggle { display: block; }
+      .hero { padding: 7rem 1.5rem 4rem; }
+      .section { padding: 4rem 1.5rem; }
+      .section-full { padding: 4rem 1.5rem; }
+      .hero-ticker { flex-direction: column; gap: 1rem; }
+      .problem-stats { grid-template-columns: 1fr; }
+      .vuln-grid { grid-template-columns: 1fr; }
+      .results-grid { grid-template-columns: 1fr; }
+      .stack-grid { grid-template-columns: 1fr; }
+      .cta-actions { flex-direction: column; align-items: center; }
+      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      .cursor-follower { display: none; }
+    }
+
+    /* ═══════════════════════════════════════════
+       TYPEWRITER
+    ═══════════════════════════════════════════ */
+    .typewriter {
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 3px solid var(--accent);
+      animation: blink-caret 0.75s step-end infinite;
+      display: inline-block;
+    }
+    @keyframes blink-caret {
+      from, to { border-color: transparent; }
+      50% { border-color: var(--accent); }
+    }
+
+    /* ═══════════════════════════════════════════
+       PARALLAX LINES
+    ═══════════════════════════════════════════ */
+    .deco-lines {
+      position: absolute;
+      top: 0; right: 0;
+      width: 300px; height: 100%;
+      pointer-events: none;
+      opacity: 0.04;
+    }
+    .deco-lines div {
+      position: absolute;
+      width: 1px;
+      height: 100%;
+      background: var(--text);
+    }
+
+    /* ═══════════════════════════════════════════
+       CHANGELONG TIMELINE
+    ═══════════════════════════════════════════ */
+    .timeline {
+      position: relative;
+      padding-left: 3rem;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      position: relative;
+      padding-bottom: 3rem;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -3rem;
+      top: 0.5rem;
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+      transform: translateX(-4px);
+    }
+    .timeline-stage {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    .timeline-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .timeline-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+    .timeline-evidence {
+      margin-top: 0.8rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--green);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOADER -->
+  <div class="loader" id="loader">
+    <div class="loader-text">Initializing Mongoose</div>
+    <div class="loader-bar"></div>
+  </div>
+
+  <!-- SCROLL PROGRESS -->
+  <div class="scroll-progress" id="scrollProgress"></div>
+
+  <!-- CURSOR FOLLOWER -->
+  <div class="cursor-follower" id="cursorFollower"></div>
+
+  <!-- NAVIGATION -->
+  <nav id="navbar">
+    <a href="#" class="nav-logo">
+      <img src="../logo-removebg-preview.png" alt="Mongoose" onerror="this.style.display='none'">
+      <span>MONGOOSE</span>
+    </a>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#results">Results</a>
+      <a href="#vulnerabilities">Classes</a>
+      <a href="docs.html">Docs</a>
+    </div>
+    <a href="#cta" class="nav-cta">Get Started →</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════════ -->
+  <section class="hero" id="hero">
+    <div class="deco-lines" aria-hidden="true">
+      <div style="left:20%"></div><div style="left:40%"></div><div style="left:60%"></div><div style="left:80%"></div>
+    </div>
+    <div class="hero-grid">
+      <div class="hero-left">
+        <div class="hero-badge reveal">
+          <span class="dot"></span>
+          micro1 Agentic Workflows Hackathon
+        </div>
+        <h1 class="reveal" style="transition-delay:0.1s">
+          Every scanner <span class="strike">guesses</span>.<br>
+          Mongoose <span class="accent">proves</span>.
+        </h1>
+        <p class="hero-subtitle reveal" style="transition-delay:0.2s">
+          An agent that doesn't just find vulnerabilities — it constructs the exploit transaction and submits it on-chain. Real proof, not vibes.
+        </p>
+        <div class="hero-actions reveal" style="transition-delay:0.3s">
+          <a href="docs.html" class="btn btn-primary">Read the Docs →</a>
+          <a href="#pipeline" class="btn btn-secondary">How It Works ↓</a>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-logo-container reveal-scale" style="transition-delay:0.2s">
+          <div class="hero-logo-bg"></div>
+          <img src="../logo-removebg-preview.png" alt="Mongoose Logo">
+        </div>
+      </div>
+    </div>
+    <div class="hero-ticker reveal" style="transition-delay:0.4s">
+      <div class="ticker-item">
+        <span class="ticker-label">True Positives</span>
+        <span class="ticker-value" data-count="6">0</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-label">False Positives</span>
+        <span class="ticker-value" data-count="0">0</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-label">Localization</span>
+        <span class="ticker-value">100%</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-label">Proven Exploits</span>
+        <span class="ticker-value" data-count="3">0</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-label">Test Cases</span>
+        <span class="ticker-value" data-count="30">0</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       MARQUEE
+  ═══════════════════════════════════════════ -->
+  <div class="marquee-section" aria-hidden="true">
+    <div class="marquee-track">
+      <span class="marquee-item"><span class="dot"></span>MISSING SIGNER CHECK</span>
+      <span class="marquee-item"><span class="dot"></span>MISSING OWNER CHECK</span>
+      <span class="marquee-item"><span class="dot"></span>TYPE COSPLAY</span>
+      <span class="marquee-item"><span class="dot"></span>PDA SEED COLLISION</span>
+      <span class="marquee-item"><span class="dot"></span>HAS_ONE CONSTRAINT</span>
+      <span class="marquee-item"><span class="dot"></span>PROVEN ON-CHAIN</span>
+      <span class="marquee-item"><span class="dot"></span>6/6 TRUE POSITIVES</span>
+      <span class="marquee-item"><span class="dot"></span>0/12 FALSE POSITIVES</span>
+      <!-- duplicate for seamless loop -->
+      <span class="marquee-item"><span class="dot"></span>MISSING SIGNER CHECK</span>
+      <span class="marquee-item"><span class="dot"></span>MISSING OWNER CHECK</span>
+      <span class="marquee-item"><span class="dot"></span>TYPE COSPLAY</span>
+      <span class="marquee-item"><span class="dot"></span>PDA SEED COLLISION</span>
+      <span class="marquee-item"><span class="dot"></span>HAS_ONE CONSTRAINT</span>
+      <span class="marquee-item"><span class="dot"></span>PROVEN ON-CHAIN</span>
+      <span class="marquee-item"><span class="dot"></span>6/6 TRUE POSITIVES</span>
+      <span class="marquee-item"><span class="dot"></span>0/12 FALSE POSITIVES</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PROBLEM
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="problem">
+    <div class="section-header reveal">
+      <span class="section-num">01 — Problem</span>
+      <h2 class="section-title">The scanner gap is <span class="italic">expensive</span></h2>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-quote reveal-left">
+        "A flag is a hypothesis. An exploit transaction is evidence. If you can't verify the hypothesis automatically, you haven't solved the problem."
+      </div>
+      <div class="problem-body reveal-right">
+        <p>
+          Static analysis is the first line of defense in every domain — code, infrastructure, security. But every developer knows the same pain: you run the scanner, get 50 warnings, and have no way to tell which 5 are real without manual investigation.
+        </p>
+        <p>
+          In smart contract security, this gap is <strong>expensive</strong>. A static analyzer flags a "missing signer check." Maybe it's a real hole. Maybe the check happens two frames up the call stack. The only way to know is to manually trace the code — or try the attack and see if it works.
+        </p>
+        <p>
+          Most solo developers can't afford a <strong>$15k+ professional audit</strong>, so they either skip review entirely or drown in unverified warnings. The tool dumps suspicion on you. <strong>It never closes the loop.</strong>
+        </p>
+      </div>
+    </div>
+    <div class="problem-stats reveal stagger-children">
+      <div class="problem-stat" style="--i:0">
+        <div class="problem-stat-num" data-count="15000">0</div>
+        <div class="problem-stat-label">Average Audit Cost ($)</div>
+      </div>
+      <div class="problem-stat" style="--i:1">
+        <div class="problem-stat-num" data-count="50">0</div>
+        <div class="problem-stat-label">Typical Scanner Warnings</div>
+      </div>
+      <div class="problem-stat" style="--i:2">
+        <div class="problem-stat-num" data-count="5">0</div>
+        <div class="problem-stat-label">Actually Exploitable</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       PIPELINE
+  ═══════════════════════════════════════════ -->
+  <section class="section-full section-dark" id="pipeline">
+    <div class="section" style="padding:0; max-width:1400px; margin:0 auto;">
+      <div class="section-header reveal" style="border-color:rgba(255,255,255,0.2)">
+        <span class="section-num">02 — Pipeline</span>
+        <h2 class="section-title" style="color:var(--text-light)">Three agents. <span class="italic" style="color:var(--accent)">One proof.</span></h2>
+      </div>
+
+      <!-- Architecture flow -->
+      <div class="arch-flow reveal">
+        <div class="arch-node">
+          <div class="arch-node-title">Anchor Program</div>
+          <div class="arch-node-sub">.rs source code</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node">
+          <div class="arch-node-title">Extractor</div>
+          <div class="arch-node-sub">Deterministic parse</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node">
+          <div class="arch-node-title">Detector</div>
+          <div class="arch-node-sub">LLM reasoning</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node">
+          <div class="arch-node-title">Verifier</div>
+          <div class="arch-node-sub">Live exploit tx</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node" style="border-color:var(--green)">
+          <div class="arch-node-title">PROVEN</div>
+          <div class="arch-node-sub">or UNCONFIRMED</div>
+        </div>
+      </div>
+
+      <div class="pipeline-grid stagger-children" style="margin-top:3rem">
+        <div class="pipeline-card" style="--i:0">
+          <div class="pipe-num">01</div>
+          <div class="pipe-tag">No LLM</div>
+          <div class="pipe-title">Extractor</div>
+          <div class="pipe-desc">
+            Deterministic tree-sitter parse of Rust source. Walks the AST for <code>#[derive(Accounts)]</code> structs, field types, and <code>#[account(...)]</code> constraints. Outputs structured JSON — no guesswork.
+          </div>
+          <ul class="pipe-features">
+            <li>Parse account structs &amp; constraints</li>
+            <li>Map has_one, owner, signer, mut</li>
+            <li>Structured JSON output per instruction</li>
+            <li>Fail-fast on parse errors</li>
+          </ul>
+        </div>
+        <div class="pipeline-card" style="--i:1">
+          <div class="pipe-num">02</div>
+          <div class="pipe-tag">LLM Agent</div>
+          <div class="pipe-title">Detector</div>
+          <div class="pipe-desc">
+            One structured Grok call with a 5-class Solana vulnerability taxonomy. Receives the Extractor's structured output, not raw code. Conservative by design — only flags what's actually absent.
+          </div>
+          <ul class="pipe-features">
+            <li>5-class vulnerability taxonomy</li>
+            <li>Structured context (not raw code)</li>
+            <li>Confidence scoring: HIGH / MEDIUM / LOW</li>
+            <li>False-positive memory registry</li>
+          </ul>
+        </div>
+        <div class="pipeline-card" style="--i:2">
+          <div class="pipe-num">03</div>
+          <div class="pipe-tag">No LLM</div>
+          <div class="pipe-title">Verifier</div>
+          <div class="pipe-desc">
+            Constructs and submits actual exploit transactions against a local solana-test-validator. Class 1-3 candidates get real proofs. Class 4-5 are flagged as Suspected with reasoning.
+          </div>
+          <ul class="pipe-features">
+            <li>Real exploit transactions on-chain</li>
+            <li>Before/after account state diff</li>
+            <li>Transaction signature as evidence</li>
+            <li>Graceful degradation on failure</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       VULNERABILITY CLASSES
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="vulnerabilities">
+    <div class="section-header reveal">
+      <span class="section-num">03 — Classes</span>
+      <h2 class="section-title">5 vulnerability classes. <span class="italic">3 fully proven.</span></h2>
+    </div>
+    <div class="vuln-grid stagger-children">
+      <div class="vuln-card" style="--i:0">
+        <div class="vuln-badge">PROVEN</div>
+        <div class="vuln-num">01</div>
+        <div class="vuln-name">Missing Signer Check</div>
+        <div class="vuln-desc">Instruction doesn't verify the expected authority actually signed the transaction. Exploit: submit unsigned account.</div>
+      </div>
+      <div class="vuln-card" style="--i:1">
+        <div class="vuln-badge">PROVEN</div>
+        <div class="vuln-num">02</div>
+        <div class="vuln-name">Missing Owner Check</div>
+        <div class="vuln-desc">Program doesn't verify an account is owned by the expected program. Exploit: pass account with wrong owner.</div>
+      </div>
+      <div class="vuln-card" style="--i:2">
+        <div class="vuln-badge">PROVEN</div>
+        <div class="vuln-num">03</div>
+        <div class="vuln-name">Type Cosplay</div>
+        <div class="vuln-desc">Program accepts an account of the wrong type due to missing discriminator check. Exploit: valid owner, wrong data layout.</div>
+      </div>
+      <div class="vuln-card" style="--i:3">
+        <div class="vuln-badge suspected">SUSPECTED</div>
+        <div class="vuln-num">04</div>
+        <div class="vuln-name">Missing Relationship</div>
+        <div class="vuln-desc">has_one / account-data matching constraint missing. Requires complex multi-instruction state setup to exploit.</div>
+      </div>
+      <div class="vuln-card" style="--i:4">
+        <div class="vuln-badge suspected">SUSPECTED</div>
+        <div class="vuln-num">05</div>
+        <div class="vuln-name">Insecure PDA Seeds</div>
+        <div class="vuln-desc">Seeds allow derivation of colliding accounts. Only reveals under actual derivation — static analysis caps out here.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       RESULTS
+  ═══════════════════════════════════════════ -->
+  <section class="section-full section-alt" id="results">
+    <div class="section" style="padding:0; max-width:1400px; margin:0 auto;">
+      <div class="section-header reveal">
+        <span class="section-num">04 — Results</span>
+        <h2 class="section-title">Measurably better. <span class="italic">Proven on-chain.</span></h2>
+      </div>
+      <div class="results-grid stagger-children">
+        <div class="result-card" style="--i:0">
+          <div class="result-value green">6/6</div>
+          <div class="result-label">True Positives</div>
+          <div class="result-sub">All 6 vulnerable families correctly flagged</div>
+        </div>
+        <div class="result-card" style="--i:1">
+          <div class="result-value green">0/12</div>
+          <div class="result-label">False Positives</div>
+          <div class="result-sub">Zero false alarms on secure variants</div>
+        </div>
+        <div class="result-card" style="--i:2">
+          <div class="result-value accent">100%</div>
+          <div class="result-label">Localization</div>
+          <div class="result-sub">Every finding pinned to instruction + account</div>
+        </div>
+        <div class="result-card" style="--i:3">
+          <div class="result-value accent">3/3</div>
+          <div class="result-label">Proven Exploits</div>
+          <div class="result-sub">Classes 1-3 backed by real transactions</div>
+        </div>
+      </div>
+
+      <!-- Comparison Table -->
+      <div class="reveal" style="margin-top:4rem">
+        <h3 style="font-family:var(--font-heading); font-weight:700; font-size:1.3rem; margin-bottom:0.3rem;">Per-Program Results</h3>
+        <p style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.15em; margin-bottom:1.5rem;">18 programs · 6 families · sealevel-attacks dataset</p>
+        <div style="overflow-x:auto;">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Family</th>
+                <th>Variant</th>
+                <th>Mongoose Flagged?</th>
+                <th>Class Correct?</th>
+                <th>Verdict</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">0-signer-authorization</td><td>insecure</td><td>YES</td><td>YES</td><td><span class="badge-proven">PROVEN</span></td></tr>
+              <tr><td class="mono">0-signer-authorization</td><td>secure</td><td>NO</td><td>N/A</td><td>—</td></tr>
+              <tr><td class="mono">0-signer-authorization</td><td>recommended</td><td>NO</td><td>N/A</td><td>—</td></tr>
+              <tr><td class="mono">1-account-data-matching</td><td>insecure</td><td>YES</td><td>YES</td><td><span class="badge-suspected">SUSPECTED</span></td></tr>
+              <tr><td class="mono">2-owner-checks</td><td>insecure</td><td>YES</td><td>YES</td><td><span class="badge-proven">PROVEN</span></td></tr>
+              <tr><td class="mono">2-owner-checks</td><td>secure</td><td>NO</td><td>N/A</td><td>—</td></tr>
+              <tr><td class="mono">3-type-cosplay</td><td>insecure</td><td>YES</td><td>YES</td><td><span class="badge-proven">PROVEN</span></td></tr>
+              <tr><td class="mono">7-bump-seed-canonicalization</td><td>insecure</td><td>YES</td><td>YES</td><td><span class="badge-suspected">SUSPECTED</span></td></tr>
+              <tr><td class="mono">8-pda-sharing</td><td>insecure</td><td>YES</td><td>YES</td><td><span class="badge-suspected">SUSPECTED</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       TRAJECTORY EXAMPLE
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="trajectory">
+    <div class="section-header reveal">
+      <span class="section-num">05 — Trajectory</span>
+      <h2 class="section-title">From source to <span class="italic">proof</span> in three steps</h2>
+    </div>
+    <p class="reveal" style="font-size:1.05rem; color:var(--text-muted); max-width:700px; margin-bottom:3rem; line-height:1.8;">
+      Representative example: <code style="font-family:var(--font-mono); background:var(--bg-alt); padding:0.2rem 0.5rem;">missing_signer_check</code> — a program where the withdraw instruction doesn't require the user to sign.
+    </p>
+    <div class="trajectory-grid stagger-children">
+      <div class="traj-step" style="--i:0">
+        <div class="traj-step-header">
+          <div class="traj-step-num">01</div>
+          <div class="traj-step-title">Extractor Output</div>
+        </div>
+        <div class="traj-code">
+<span class="key">"instructions"</span>: [{
+  <span class="key">"name"</span>: <span class="str">"withdraw"</span>,
+  <span class="key">"accounts"</span>: [
+    { <span class="key">"name"</span>: <span class="str">"user"</span>,
+      <span class="key">"is_signer"</span>: <span class="num">false</span> },
+    { <span class="key">"name"</span>: <span class="str">"vault"</span>,
+      <span class="key">"is_mut"</span>: <span class="num">true</span> }
+  ],
+  <span class="key">"constraint_summary"</span>:
+    <span class="str">"No signer constraints"</span>
+}]
+        </div>
+      </div>
+      <div class="traj-step" style="--i:1">
+        <div class="traj-step-header">
+          <div class="traj-step-num">02</div>
+          <div class="traj-step-title">Detector Finding</div>
+        </div>
+        <div class="traj-code">
+{
+  <span class="key">"vulnerability_class"</span>: <span class="num">1</span>,
+  <span class="key">"instruction_name"</span>: <span class="str">"withdraw"</span>,
+  <span class="key">"account_name"</span>: <span class="str">"user"</span>,
+  <span class="key">"reasoning"</span>: <span class="str">"The 'user' account
+    has is_signer=false and no
+    explicit signer constraint.
+    In a withdrawal instruction,
+    the user should be signing."</span>,
+  <span class="key">"confidence"</span>: <span class="str">"HIGH"</span>
+}
+        </div>
+      </div>
+      <div class="traj-step" style="--i:2">
+        <div class="traj-step-header">
+          <div class="traj-step-num">03</div>
+          <div class="traj-step-title">Verifier Result</div>
+        </div>
+        <div class="traj-code">
+{
+  <span class="key">"verdict"</span>: <span class="str">"PROVEN"</span>,
+  <span class="key">"exploit_transaction"</span>: <span class="str">"4xZv..."</span>,
+  <span class="key">"pre_state"</span>: {
+    <span class="key">"vault_balance"</span>: <span class="num">5000000</span> },
+  <span class="key">"post_state"</span>: {
+    <span class="key">"vault_balance"</span>: <span class="num">0</span> },
+  <span class="key">"notes"</span>: <span class="str">"Called withdraw with
+    random keypair — no sig
+    required. Vault drained."</span>
+}
+        </div>
+        <div class="traj-verdict">
+          <div class="traj-verdict-icon">✓</div>
+          <div class="traj-verdict-text">PROVEN — Class 1: Missing Signer</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       TECH STACK
+  ═══════════════════════════════════════════ -->
+  <section class="section-full section-dark">
+    <div class="section" style="padding:0; max-width:1400px; margin:0 auto;">
+      <div class="section-header reveal" style="border-color:rgba(255,255,255,0.2)">
+        <span class="section-num">06 — Stack</span>
+        <h2 class="section-title" style="color:var(--text-light)">TypeScript <span class="italic" style="color:var(--accent)">end-to-end</span></h2>
+      </div>
+      <div class="stack-grid stagger-children">
+        <div class="stack-item" style="--i:0">
+          <div class="stack-icon">🌲</div>
+          <div class="stack-name">tree-sitter-rust</div>
+          <div class="stack-role">Extractor Parser</div>
+        </div>
+        <div class="stack-item" style="--i:1">
+          <div class="stack-icon">🧠</div>
+          <div class="stack-name">Grok Cloud</div>
+          <div class="stack-role">LLM Detector</div>
+        </div>
+        <div class="stack-item" style="--i:2">
+          <div class="stack-icon">⛓️</div>
+          <div class="stack-name">@solana/web3.js</div>
+          <div class="stack-role">Transaction Builder</div>
+        </div>
+        <div class="stack-item" style="--i:3">
+          <div class="stack-icon">🔧</div>
+          <div class="stack-name">Anchor 0.29</div>
+          <div class="stack-role">Framework</div>
+        </div>
+        <div class="stack-item" style="--i:4">
+          <div class="stack-icon">🦀</div>
+          <div class="stack-name">Solana CLI 1.18</div>
+          <div class="stack-role">Validator</div>
+        </div>
+        <div class="stack-item" style="--i:5">
+          <div class="stack-icon">📦</div>
+          <div class="stack-name">TypeScript 5.4</div>
+          <div class="stack-role">Language</div>
+        </div>
+        <div class="stack-item" style="--i:6">
+          <div class="stack-icon">🟢</div>
+          <div class="stack-name">Node.js 20</div>
+          <div class="stack-role">Runtime</div>
+        </div>
+        <div class="stack-item" style="--i:7">
+          <div class="stack-icon">⚡</div>
+          <div class="stack-name">GitHub Actions</div>
+          <div class="stack-role">CI/CD</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       COMPETITIVE LANDSCAPE
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="competitive">
+    <div class="section-header reveal">
+      <span class="section-num">07 — Landscape</span>
+      <h2 class="section-title">What <span class="italic">others</span> don't do</h2>
+    </div>
+    <div class="comp-grid stagger-children">
+      <div class="comp-card" style="--i:0">
+        <div class="comp-name">Soteria</div>
+        <div class="comp-what">Static pattern-matching with CI integration.</div>
+        <div class="comp-gap">Flags patterns but does not attempt or confirm exploitation.</div>
+      </div>
+      <div class="comp-card" style="--i:1">
+        <div class="comp-name">Sec3 X-ray</div>
+        <div class="comp-what">Static analysis for Solana programs.</div>
+        <div class="comp-gap">Same gap: suspicion without proof. No exploit verification.</div>
+      </div>
+      <div class="comp-card" style="--i:2">
+        <div class="comp-name">Manual Audits</div>
+        <div class="comp-what">Gold standard: human review by OtterSec, Neodyme.</div>
+        <div class="comp-gap">$15k+ per audit. Weeks of scheduling. Inaccessible to solo devs.</div>
+      </div>
+      <div class="comp-card" style="--i:3">
+        <div class="comp-name">Generic LLM</div>
+        <div class="comp-what">"Find bugs in this code" prompt with no context.</div>
+        <div class="comp-gap">No Solana-specific knowledge. High false-negative rate. No verification.</div>
+      </div>
+      <div class="comp-card" style="--i:4">
+        <div class="comp-name">OpenCode / Grok Build</div>
+        <div class="comp-what">Build-time coding agents for trajectory generation.</div>
+        <div class="comp-gap">Great at code generation. Not designed for security verification.</div>
+      </div>
+      <div class="comp-card featured" style="--i:5">
+        <div class="comp-name">⬡ Mongoose</div>
+        <div class="comp-what">Structured extraction + Solana-specific detection + live exploit verification.</div>
+        <div class="comp-gap">Every "Proven" finding is backed by an actual transaction, not a guess.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       IMPROVEMENT CHANGELOG
+  ═══════════════════════════════════════════ -->
+  <section class="section-full section-alt" id="changelog">
+    <div class="section" style="padding:0; max-width:1400px; margin:0 auto;">
+      <div class="section-header reveal">
+        <span class="section-num">08 — Changelog</span>
+        <h2 class="section-title">Built in <span class="italic">public</span>. Iterated with evidence.</h2>
+      </div>
+      <div class="timeline reveal">
+        <div class="timeline-item">
+          <div class="timeline-stage">Baseline</div>
+          <div class="timeline-title">Generic "find bugs" prompt</div>
+          <div class="timeline-desc">Raw code input, no Solana context, no verification. Established the floor — expect it to miss Sealevel-specific issues.</div>
+          <div class="timeline-evidence">TP: 5/6 · FP: 8/12</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-stage">Iteration 1</div>
+          <div class="timeline-title">Added 5-class vulnerability taxonomy</div>
+          <div class="timeline-desc">Detection improved for Solana-specific patterns. Watch for false positives on fixed versions where the check exists but is non-obvious.</div>
+          <div class="timeline-evidence">Improved Solana-specific detection</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-stage">Iteration 2</div>
+          <div class="timeline-title">Structured Extractor + field-mapped prompt</div>
+          <div class="timeline-desc">False positives dropped. Detector no longer misses constraints hidden in Anchor macros. Localization improved from "somewhere" to specific instruction/account.</div>
+          <div class="timeline-evidence">TP improved · FP still non-zero</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-stage">Iteration 3</div>
+          <div class="timeline-title">Deterministic validation layer</div>
+          <div class="timeline-desc">Key fix: LLM suggests, code validates and backfills Classes 1–5 candidates. Eliminated false positives and backfilled misses.</div>
+          <div class="timeline-evidence">TP: 6/6 · FP: 0/12 · Localization: 100%</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-stage">Verifier CI</div>
+          <div class="timeline-title">GitHub Actions builds fixtures, deploys, runs exploits</div>
+          <div class="timeline-desc">Chromebook/Windows writes TS; Linux CI produces real proofs. OTTER_SIGNALS_ONLY=1 avoids Groq in CI.</div>
+          <div class="timeline-evidence">3 PROVEN exploit transactions in CI artifacts</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       GROUND RULES
+  ═══════════════════════════════════════════ -->
+  <section class="section" id="rules">
+    <div class="section-header reveal">
+      <span class="section-num">09 — Rules</span>
+      <h2 class="section-title">Responsible by <span class="italic">design</span></h2>
+    </div>
+    <div class="rules-grid stagger-children">
+      <div class="rule-card" style="--i:0">
+        <div class="rule-icon">🔒</div>
+        <div>
+          <div class="rule-title">Sandboxed Execution</div>
+          <div class="rule-desc">All exploit attempts run against a local solana-test-validator. No transactions touch devnet, testnet, or mainnet.</div>
+        </div>
+      </div>
+      <div class="rule-card" style="--i:1">
+        <div class="rule-icon">👁️</div>
+        <div>
+          <div class="rule-title">Human Review</div>
+          <div class="rule-desc">Final report is a recommendation for developer review, not an automated verdict. The human decides whether to act.</div>
+        </div>
+      </div>
+      <div class="rule-card" style="--i:2">
+        <div class="rule-icon">📜</div>
+        <div>
+          <div class="rule-title">Legal Use Only</div>
+          <div class="rule-desc">Uses only public educational data (sealevel-attacks, openly licensed). No real user funds or private data.</div>
+        </div>
+      </div>
+      <div class="rule-card" style="--i:3">
+        <div class="rule-icon">🔑</div>
+        <div>
+          <div class="rule-title">No Secrets in Repo</div>
+          <div class="rule-desc">No private keys, API tokens, or wallet seeds. Test validator generates ephemeral keypairs on startup.</div>
+        </div>
+      </div>
+      <div class="rule-card" style="--i:4">
+        <div class="rule-icon">📊</div>
+        <div>
+          <div class="rule-title">Evidence-Backed Claims</div>
+          <div class="rule-desc">Every "Proven" finding includes the actual exploit transaction signature and account state diff.</div>
+        </div>
+      </div>
+      <div class="rule-card" style="--i:5">
+        <div class="rule-icon">🧪</div>
+        <div>
+          <div class="rule-title">Reproducible</div>
+          <div class="rule-desc">Single TypeScript codebase. Pinned versions. One-command evaluation. Public dataset.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       CTA
+  ═══════════════════════════════════════════ -->
+  <section class="cta-section" id="cta">
+    <div class="reveal">
+      <h2 class="cta-title">Ready to prove<br>what's actually broken?</h2>
+      <p class="cta-subtitle">Don't just scan. Exploit. Verify. Prove.</p>
+      <div class="cta-actions">
+        <a href="docs.html" class="btn btn-primary">Read the Docs →</a>
+        <a href="https://github.com/Azeru548/ottersec" class="btn btn-secondary" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════ -->
+  <footer>
+    <div class="footer-left">© 2026 Mongoose · Built for micro1 Hackathon</div>
+    <div class="footer-links">
+      <a href="docs.html">Docs</a>
+      <a href="https://github.com/Azeru548/ottersec" target="_blank" rel="noopener">GitHub</a>
+      <a href="#hero">Back to Top ↑</a>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════ -->
+  <script>
+    // ─── Loader ───
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('loader').classList.add('hidden');
+      }, 1200);
+    });
+
+    // ─── Cursor Follower ───
+    const cursor = document.getElementById('cursorFollower');
+    let cursorX = 0, cursorY = 0, followerX = 0, followerY = 0;
+    document.addEventListener('mousemove', e => {
+      cursorX = e.clientX; cursorY = e.clientY;
+    });
+    function animateCursor() {
+      followerX += (cursorX - followerX) * 0.12;
+      followerY += (cursorY - followerY) * 0.12;
+      cursor.style.left = followerX + 'px';
+      cursor.style.top = followerY + 'px';
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    // Hover state for interactive elements
+    document.querySelectorAll('a, button, .pipeline-card, .vuln-card, .comp-card, .stack-item').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('hovering'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('hovering'));
+    });
+
+    // ─── Scroll Progress ───
+    const scrollProgress = document.getElementById('scrollProgress');
+    window.addEventListener('scroll', () => {
+      const scrollTop = document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (scrollTop / scrollHeight) * 100;
+      scrollProgress.style.width = progress + '%';
+    });
+
+    // ─── Nav scroll behavior ───
+    const navbar = document.getElementById('navbar');
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      const currentScroll = window.pageYOffset;
+      if (currentScroll > 100) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+      lastScroll = currentScroll;
+    });
+
+    // ─── Mobile Nav Toggle ───
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.querySelector('.nav-links');
+    navToggle.addEventListener('click', () => {
+      navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+      navLinks.style.position = 'absolute';
+      navLinks.style.top = '100%';
+      navLinks.style.left = '0';
+      navLinks.style.right = '0';
+      navLinks.style.flexDirection = 'column';
+      navLinks.style.background = 'var(--bg)';
+      navLinks.style.padding = '1.5rem 3rem';
+      navLinks.style.borderBottom = '3px solid var(--border)';
+      navLinks.style.gap = '1.5rem';
+    });
+
+    // ─── Scroll Reveal ───
+    const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(el => {
+      observer.observe(el);
+    });
+
+    // ─── Counter Animation ───
+    function animateCounters() {
+      document.querySelectorAll('[data-count]').forEach(el => {
+        if (el.dataset.animated) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          el.dataset.animated = 'true';
+          const target = parseInt(el.dataset.count);
+          const duration = 2000;
+          const start = performance.now();
+          function update(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(eased * target);
+            el.textContent = current.toLocaleString();
+            if (progress < 1) requestAnimationFrame(update);
+          }
+          requestAnimationFrame(update);
+        }
+      });
+    }
+    window.addEventListener('scroll', animateCounters);
+    window.addEventListener('load', () => setTimeout(animateCounters, 1400));
+
+    // ─── Parallax on hero logo ───
+    const heroLogo = document.querySelector('.hero-logo-container');
+    if (heroLogo) {
+      window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        if (scrolled < window.innerHeight) {
+          heroLogo.style.transform = `translateY(${scrolled * 0.15}px)`;
+        }
+      });
+    }
+
+    // ─── Smooth anchor scrolling ───
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Close mobile nav if open
+          if (window.innerWidth <= 768) {
+            navLinks.style.display = 'none';
+          }
+        }
+      });
+    });
+
+    // ─── Typewriter effect for hero badge ───
+    const badge = document.querySelector('.hero-badge');
+    if (badge) {
+      const text = badge.textContent.trim();
+      // Only apply once
+      if (!badge.dataset.typed) {
+        badge.dataset.typed = 'true';
+      }
+    }
+
+    // ─── Magnetic button effect ───
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('mousemove', e => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = `translate(${x * 0.15}px, ${y * 0.15}px)`;
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.transform = '';
+      });
+    });
+
+    // ─── Tilt effect on pipeline cards ───
+    document.querySelectorAll('.pipeline-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        card.style.transform = `translate(-4px, -4px) perspective(600px) rotateY(${x * 5}deg) rotateX(${-y * 5}deg)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+      });
+    });
+  </script>
+</body>
+</html>
