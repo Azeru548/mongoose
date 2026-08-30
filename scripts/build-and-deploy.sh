@@ -71,8 +71,8 @@ for entry in "${PROGRAMS[@]}"; do
 
   cp "$KP_OUT" "$KP_DEPLOY"
 
-  echo "    cargo build-sbf --locked --manifest-path $FIX/$CRATE_REL/Cargo.toml"
-  cargo build-sbf --locked --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
+  echo "    cargo build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked"
+  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
   if [[ ! -f "$SO" ]]; then
