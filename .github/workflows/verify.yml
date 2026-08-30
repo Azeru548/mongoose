@@ -1,4 +1,4 @@
-name: Otter Verifier CI
+name: Mongoose Verifier CI
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: otter-verify-${{ github.ref }}
+  group: mongoose-verify-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -95,7 +95,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: otter-verifier-results
+          name: mongoose-verifier-results
           path: |
             output/deployed_programs.json
             output/verifier_results.json
