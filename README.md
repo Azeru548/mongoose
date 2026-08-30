@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo-removebg-preview.png" alt="Mongoose Logo" width="200" />
+</p>
+
 # Mongoose
 
 **Every scanner tells you "this looks broken." Mongoose shows you the transaction that broke it.**
