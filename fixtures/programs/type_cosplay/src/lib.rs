@@ -3,9 +3,10 @@ use pinocchio::{
     account_info::AccountInfo, entrypoint, msg, pubkey::Pubkey, ProgramResult,
 };
 
-pinocchio::declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
+pinocchio_pubkey::declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
 
 entrypoint!(process_instruction);
+pinocchio::default_panic_handler!();
 
 pub fn process_instruction(
     _program_id: &Pubkey,

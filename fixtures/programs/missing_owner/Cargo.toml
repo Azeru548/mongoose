@@ -10,4 +10,5 @@ name = "missing_owner"
 
 [dependencies]
 pinocchio = "0.7"
+pinocchio-pubkey = "0.2.2"
 
