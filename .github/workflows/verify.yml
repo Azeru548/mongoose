@@ -55,6 +55,16 @@ jobs:
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           solana --version
 
+      - name: Ensure latest cargo is active
+        run: |
+          rustup default stable
+          rustup update stable
+          export PATH="$HOME/.cargo/bin:$PATH"
+          rustc --version
+          cargo --version
+          echo "CARGO=$(which cargo)" >> $GITHUB_ENV
+          echo "RUSTC=$(which rustc)" >> $GITHUB_ENV
+
       - name: Toolchain versions
         run: |
           echo "node $(node -v)"

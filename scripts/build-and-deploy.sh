@@ -91,9 +91,26 @@ for entry in "${PROGRAMS[@]}"; do
   pushd "$FIX/$CRATE_REL" >/dev/null
   # Nuclear: clear any patch that breaks modern cargo (Anchor 0.29 quirk)
   # (workspace patch already removed, but keep as safety)
+  export PATH="$HOME/.cargo/bin:$PATH"
+  rustup default stable
   set +e
-  cargo build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+  cargo +stable build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
   BUILD_RC=${PIPESTATUS[0]}
+  if [[ $BUILD_RC -ne 0 ]]; then
+    echo "    cargo +stable build-sbf failed (rc=$BUILD_RC), trying +nightly..." >&2
+    cat /tmp/build-${CRATE_NAME}.log >&2
+    cargo +nightly build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+    BUILD_RC=${PIPESTATUS[0]}
+  fi
+  if [[ $BUILD_RC -ne 0 ]]; then
+    echo "    both +stable/+nightly failed, trying dependency pinning + retry..." >&2
+    cat /tmp/build-${CRATE_NAME}.log >&2
+    cargo update -p zeroize_derive --precise 1.4.2 2>/dev/null || true
+    cargo update -p zeroize --precise 1.7.0 2>/dev/null || true
+    cargo update -p crypto-common --precise 0.1.6 2>/dev/null || true
+    cargo +stable build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+    BUILD_RC=${PIPESTATUS[0]}
+  fi
   set -e
   popd >/dev/null
   if [[ $BUILD_RC -ne 0 ]]; then
@@ -101,14 +118,17 @@ for entry in "${PROGRAMS[@]}"; do
       downgrade_lockfile
       echo "    retrying cargo build-sbf after downgrade..."
       pushd "$FIX/$CRATE_REL" >/dev/null
-      cargo build-sbf
+      export PATH="$HOME/.cargo/bin:$PATH"
+      rustup default stable
+      cargo +stable build-sbf
       popd >/dev/null
     elif grep -q "failed to parse manifest" /tmp/build-${CRATE_NAME}.log && grep -q "edition2024" /tmp/build-${CRATE_NAME}.log; then
       echo "    edition2024 error — trying cargo update + retry..." >&2
       rm -f "$FIX/$CRATE_REL/Cargo.lock" "$FIX/Cargo.lock"
       pushd "$FIX/$CRATE_REL" >/dev/null
+      export PATH="$HOME/.cargo/bin:$PATH"
       cargo update 2>/dev/null || true
-      cargo build-sbf
+      cargo +stable build-sbf
       popd >/dev/null
     else
       echo "cargo build-sbf failed (see /tmp/build-${CRATE_NAME}.log)" >&2
