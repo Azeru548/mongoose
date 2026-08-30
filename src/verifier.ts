@@ -73,14 +73,17 @@ function loadDeployMap(path: string): DeployMap | null {
 }
 
 async function probeValidator(rpcUrl: string) {
-  try {
-    const { Connection } = await import("@solana/web3.js");
-    const connection = new Connection(rpcUrl, "confirmed");
-    await connection.getVersion();
-    return connection;
-  } catch {
-    return null;
+  const { Connection } = await import("@solana/web3.js");
+  const connection = new Connection(rpcUrl, "confirmed");
+  for (let i = 0; i < 10; i++) {
+    try {
+      await connection.getVersion();
+      return connection;
+    } catch {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
+  return null;
 }
 
 function resolveDeploy(
