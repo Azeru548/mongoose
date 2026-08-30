@@ -87,12 +87,14 @@
     .loader-text {
       font-family: var(--font-mono);
       color: var(--accent);
-      font-size: 1.5rem;
-      letter-spacing: 0.3em;
+      font-size: clamp(0.9rem, 3vw, 1.5rem);
+      letter-spacing: 0.2em;
       text-transform: uppercase;
+      text-align: center;
+      padding: 0 1.5rem;
     }
     .loader-bar {
-      width: 200px; height: 2px;
+      width: clamp(120px, 40vw, 200px); height: 2px;
       background: rgba(255,255,255,0.1);
       margin-top: 2rem;
       position: relative;
@@ -250,6 +252,7 @@
       margin-bottom: 2.5rem;
       font-style: italic;
     }
+    .hero-left:has(.hero-subtitle) { margin-top: 0; }
     .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
     .btn {
       font-family: var(--font-mono);
@@ -1094,7 +1097,7 @@
       .hero-right { display: none; }
       .hero-subtitle { margin-left: auto; margin-right: auto; }
       .hero-actions { justify-content: center; }
-      .hero-ticker { justify-content: center; }
+      .hero-ticker { justify-content: center; flex-wrap: wrap; }
       .pipeline-grid { grid-template-columns: 1fr; }
       .vuln-grid { grid-template-columns: repeat(2, 1fr); }
       .results-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1111,17 +1114,48 @@
       nav { padding: 1rem 1.5rem; }
       .nav-links { display: none; }
       .nav-toggle { display: block; }
-      .hero { padding: 7rem 1.5rem 4rem; }
-      .section { padding: 4rem 1.5rem; }
-      .section-full { padding: 4rem 1.5rem; }
-      .hero-ticker { flex-direction: column; gap: 1rem; }
+      .nav-logo span { font-size: 1rem; }
+      .hero { padding: 6.5rem 1.2rem 3rem; min-height: auto; }
+      .hero h1 { font-size: clamp(2.2rem, 8vw, 3.5rem); }
+      .hero-badge { font-size: 0.6rem; padding: 0.4rem 0.8rem; }
+      .hero-actions { flex-direction: column; align-items: stretch; }
+      .hero-actions .btn { justify-content: center; }
+      .hero-ticker { flex-direction: column; gap: 0.8rem; align-items: center; }
+      .ticker-value { font-size: 1.4rem; }
+      .section { padding: 3rem 1.2rem; }
+      .section-full { padding: 3rem 1.2rem; }
+      .section-header { flex-direction: column; gap: 0.5rem; }
+      .section-title { font-size: clamp(1.6rem, 5vw, 2.5rem); }
       .problem-stats { grid-template-columns: 1fr; }
+      .problem-quote { font-size: 1.3rem; padding-left: 1.2rem; }
       .vuln-grid { grid-template-columns: 1fr; }
+      .vuln-card { padding: 1.5rem; }
       .results-grid { grid-template-columns: 1fr; }
+      .result-card { padding: 1.8rem 1.5rem; }
+      .result-value { font-size: 2.8rem; }
       .stack-grid { grid-template-columns: 1fr; }
+      .comp-grid { grid-template-columns: 1fr; }
+      .rules-grid { grid-template-columns: 1fr; }
+      .rule-card { padding: 1.2rem; }
+      .cta-section { padding: 4rem 1.2rem; }
+      .cta-title { font-size: clamp(1.8rem, 6vw, 3rem); }
       .cta-actions { flex-direction: column; align-items: center; }
-      footer { flex-direction: column; gap: 1.5rem; text-align: center; }
+      .cta-actions .btn { width: 100%; max-width: 300px; justify-content: center; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.2rem; }
       .cursor-follower { display: none; }
+      .loader-text { font-size: clamp(0.7rem, 4vw, 1.2rem); letter-spacing: 0.15em; }
+      .loader-bar { width: 140px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 2rem; }
+      .hero-badge { font-size: 0.55rem; }
+      .btn { padding: 0.8rem 1.2rem; font-size: 0.7rem; }
+      .pipe-card { padding: 1.5rem; }
+      .pipe-num { font-size: 2.5rem; }
+      .arch-node { min-width: 140px; padding: 1rem; }
+      .arch-node-title { font-size: 0.85rem; }
+      .marquee-item { font-size: 0.75rem; padding: 0 1.5rem; }
     }
 
     /* ═══════════════════════════════════════════
@@ -1258,8 +1292,7 @@
           micro1 Agentic Workflows Hackathon
         </div>
         <h1 class="reveal" style="transition-delay:0.1s">
-          Every scanner <span class="strike">guesses</span>.<br>
-          Mongoose <span class="accent">proves</span>.
+          Every scanner <span class="strike">guesses</span>.
         </h1>
         <p class="hero-subtitle reveal" style="transition-delay:0.2s">
           An agent that doesn't just find vulnerabilities — it constructs the exploit transaction and submits it on-chain. Real proof, not vibes.
