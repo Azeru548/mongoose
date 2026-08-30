@@ -59,12 +59,10 @@ for entry in "${PROGRAMS[@]}"; do
   PUBKEY="$(solana-keygen pubkey "$KP_OUT")"
   echo "    program id: $PUBKEY"
 
-  # Replace declare_id!("..."); in lib.rs using sed
   sed -i.bak -E "s/declare_id!\(\"[^\"]+\"\);/declare_id!(\"$PUBKEY\");/" "$SRC"
   rm -f "${SRC}.bak"
   echo "    patched declare_id in $SRC"
 
-  # Keep Anchor.toml in sync for this crate
   sed -i.bak -E "s/(${CRATE_NAME}[[:space:]]*=[[:space:]]*\")[^\"]+(\")/\1${PUBKEY}\2/" "$FIX/Anchor.toml"
   rm -f "${FIX}/Anchor.toml.bak"
   echo "    patched Anchor.toml for $CRATE_NAME"
@@ -73,11 +71,10 @@ for entry in "${PROGRAMS[@]}"; do
 
   echo "=== Cargo.lock before build (should be version 3) ==="
   head -n 3 "$FIX/Cargo.lock" || true
-  grep -A2 'name = "indexmap"' "$FIX/Cargo.lock" | head -n 3 || true
   ls -l "$FIX/Cargo.lock" || true
 
-  echo "    cargo build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked"
-  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked
+  echo "    cargo-build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked"
+  cargo-build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
   if [[ ! -f "$SO" ]]; then

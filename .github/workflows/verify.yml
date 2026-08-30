@@ -28,13 +28,6 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install latest Rust
-        run: |
-          rustup update stable
-          rustup default stable
-          rustc --version
-          cargo --version
-
       - name: Cache cargo
         uses: actions/cache@v4
         with:
@@ -59,8 +52,6 @@ jobs:
         run: |
           echo "node $(node -v)"
           solana --version
-          rustc --version
-          cargo --version
 
       - name: Start solana-test-validator
         run: |
