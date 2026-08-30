@@ -1,5 +1,5 @@
 {
-  "name": "otter",
+  "name": "mongoose",
   "version": "0.1.0",
   "private": true,
   "description": "Otter — an agent that proves Solana/Anchor vulnerabilities, not just guesses them.",
