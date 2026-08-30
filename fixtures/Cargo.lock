@@ -3,10 +3,26 @@
 version = 3
 
 [[package]]
+name = "five8_const"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26dec3da8bc3ef08f2c04f61eab298c3ab334523e55f076354d6d6f613799a7b"
+dependencies = [
+ "five8_core",
+]
+
+[[package]]
+name = "five8_core"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2551bf44bc5f776c15044b9b94153a00198be06743e262afaaa61f11ac7523a5"
+
+[[package]]
 name = "missing_owner"
 version = "0.1.0"
 dependencies = [
  "pinocchio",
+ "pinocchio-pubkey",
 ]
 
 [[package]]
@@ -14,6 +30,7 @@ name = "missing_signer"
 version = "0.1.0"
 dependencies = [
  "pinocchio",
+ "pinocchio-pubkey",
 ]
 
 [[package]]
@@ -21,6 +38,7 @@ name = "missing_signer_secure"
 version = "0.1.0"
 dependencies = [
  "pinocchio",
+ "pinocchio-pubkey",
 ]
 
 [[package]]
@@ -30,8 +48,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a8a77bf74e1c4050a2bad53648acfcfbf22b1806473f9c9334a58ef3b38ec4"
 
 [[package]]
+name = "pinocchio-pubkey"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "103d69776a0c585bb01b344d641346593adb4496120796df229722a9bab2db68"
+dependencies = [
+ "five8_const",
+ "pinocchio",
+]
+
+[[package]]
 name = "type_cosplay"
 version = "0.1.0"
 dependencies = [
  "pinocchio",
+ "pinocchio-pubkey",
 ]
