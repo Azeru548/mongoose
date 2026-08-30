@@ -2,7 +2,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import type { CaseLabel, DatasetCase, VulnClass } from "./types.js";
 
-/** Maps sealevel-attacks families onto Otter's v1 taxonomy. */
+/** Maps sealevel-attacks families onto Mongoose's v1 taxonomy. */
 export const CLASS_BY_FAMILY: Record<string, VulnClass> = {
   "0-signer-authorization": 1,
   "2-owner-checks": 2,

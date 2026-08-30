@@ -1,8 +1,8 @@
-# Otter
+# Mongoose
 
-**Every scanner tells you "this looks broken." Otter shows you the transaction that broke it.**
+**Every scanner tells you "this looks broken." Mongoose shows you the transaction that broke it.**
 
-Otter is a three-stage agent for solo Anchor developers: it extracts a structured account map, flags Solana-specific holes, then tries to *prove* them with a real transaction on a local validator. Findings are **Proven** (exploit landed) or **Suspected** (flagged, not confirmed).
+Mongoose is a three-stage agent for solo Anchor developers: it extracts a structured account map, flags Solana-specific holes, then tries to *prove* them with a real transaction on a local validator. Findings are **Proven** (exploit landed) or **Suspected** (flagged, not confirmed).
 
 Hackathon: micro1 Agentic Workflows.
 
@@ -35,7 +35,7 @@ npm run setup:dataset
 
 The spec named `neodyme-labs/sealevel-attacks`; that repo is not public. The Anchor insecure/secure/recommended pairs live in [coral-xyz/sealevel-attacks](https://github.com/coral-xyz/sealevel-attacks).
 
-Optional verifier: Solana CLI 1.18 + `solana-test-validator` on `http://127.0.0.1:8899`. Without it, findings degrade to UNCONFIRMED — Otter will not invent a signature.
+Optional verifier: Solana CLI 1.18 + `solana-test-validator` on `http://127.0.0.1:8899`. Without it, findings degrade to UNCONFIRMED — Mongoose will not invent a signature.
 
 ## Commands
 
@@ -83,9 +83,9 @@ Local machines write TypeScript. **ubuntu-latest** builds programs, starts the v
 ### Run manually from GitHub UI
 
 1. Push this repo to GitHub
-2. Open **Actions** → **Otter Verifier CI**
+2. Open **Actions** → **Mongoose Verifier CI**
 3. Click **Run workflow** → **Run workflow**
-4. When green, open the run → **Artifacts** → download `otter-verifier-results`
+4. When green, open the run → **Artifacts** → download `mongoose-verifier-results`
 5. Commit `verifier_results.json` from the zip into the repo if you want proofs in git
 
 ### What the workflow does

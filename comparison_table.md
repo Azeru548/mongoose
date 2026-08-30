@@ -1,6 +1,6 @@
-# Otter iteration 2 comparison
+# Mongoose iteration 2 comparison
 
-| Family | Variant | Baseline Flagged? | Otter Flagged? | Otter Class Correct? | Instruction Name |
+| Family | Variant | Baseline Flagged? | Mongoose Flagged? | Mongoose Class Correct? | Instruction Name |
 |---|---|---|---|---|---|
 | 0-signer-authorization | insecure | YES | YES | YES | log_message |
 | 0-signer-authorization | recommended | YES | NO | N/A | — |
@@ -23,7 +23,7 @@
 
 ## Aggregates
 
-| Metric | Baseline | Otter |
+| Metric | Baseline | Mongoose |
 |---|---|---|
 | True positives | 5/6 | 6/6 |
 | False positives | 8/12 | 0/12 |
@@ -34,13 +34,13 @@
 _None._
 
 ```
-=== OTTER ITERATION 2 SUMMARY ===
+=== MONGOOSE ITERATION 2 SUMMARY ===
 Programs evaluated: 18
 In-scope vulnerable: 6 (insecure variants of the 6 families)
 In-scope fixed: 12 (secure + recommended variants)
 Baseline TP: 5/6 | FP: 8/12
-Otter TP: 6/6 | FP: 0/12
-Otter localization accuracy: 100%
+Mongoose TP: 6/6 | FP: 0/12
+Mongoose localization accuracy: 100%
 API errors: 0 | Extraction failures: 0
 Dropped findings by validation filter:
   (none)

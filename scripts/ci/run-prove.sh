@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run Otter Detector (signals-only) + Verifier against deployed fixtures.
+# Run Mongoose Detector (signals-only) + Verifier against deployed fixtures.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

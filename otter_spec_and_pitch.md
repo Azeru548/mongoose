@@ -1,4 +1,4 @@
-# Otter
+# Mongoose
 ### An Agent That Proves Vulnerabilities — Not Just Guesses Them
 
 *micro1 Agentic Workflows Hackathon Submission*
@@ -8,7 +8,7 @@
 ## 1. Product Pitch
 
 ### Tagline
-**Every scanner tells you "this looks broken." Otter shows you the transaction that broke it.**
+**Every scanner tells you "this looks broken." Mongoose shows you the transaction that broke it.**
 
 ### The Problem (Framed Universally)
 Static analysis is the first line of defense in every domain — code, infrastructure, security. But every developer knows the same pain: you run the scanner, get 50 warnings, and have no way to tell which 5 are real without manual investigation. The tool dumps suspicion on you. It never closes the loop.
@@ -21,8 +21,8 @@ Solo developers and small teams shipping Solana Anchor programs without an audit
 ### The Insight
 Detection and proof are different problems. A flag is a hypothesis. An exploit transaction is evidence. If you can't verify the hypothesis automatically, you haven't solved the problem — you've just moved the manual work upstream.
 
-### What Otter Does
-Given an Anchor program, Otter runs a three-stage pipeline:
+### What Mongoose Does
+Given an Anchor program, Mongoose runs a three-stage pipeline:
 
 1. Extracts a structured account/instruction map (deterministic parsing, no guesswork)
 2. Flags candidate vulnerabilities against a Solana-specific taxonomy (LLM reasoning with grounded context)
@@ -34,7 +34,7 @@ The final report splits findings into two tiers:
 
 ### Why This Wins (Rubric Mapping)
 
-| Rubric Criterion | How Otter Delivers |
+| Rubric Criterion | How Mongoose Delivers |
 |---|---|
 | Problem & User Value (15) | Sharp user definition (solo Anchor devs). Real bottleneck (unverified scanner output). High stakes (financial loss from missed bugs). |
 | Agent Solution & Engineering (30) | Three-stage pipeline where each stage catches the previous stage's failure mode. Purposeful use of deterministic tools + LLM + dynamic verification + a persistent false-positive memory. Not three agents for show — three agents because each solves a different sub-problem. |
@@ -47,7 +47,7 @@ The final report splits findings into two tiers:
 
 ## 2. Competitive Landscape
 
-| Tool | What It Does | Gap Otter Fills |
+| Tool | What It Does | Gap Mongoose Fills |
 |---|---|---|
 | **Soteria** | Static pattern-matching, CI integration | Flags patterns; does not attempt or confirm exploitation |
 | **Sec3 X-ray** | Static analysis for Solana | Same gap: suspicion without proof |
@@ -246,11 +246,11 @@ The baseline receives the raw `.rs` files. It does not know the 5-class taxonomy
 ### Test Set
 - Source: `neodyme-labs/sealevel-attacks`
 - Structure: 5 vulnerability classes × 3 paired examples (vulnerable + fixed) = 15 vulnerable programs + 15 fixed programs = **30 total test cases**
-- One deliberately hard case: the PDA seed collision example (Class 5) — it looks syntactically correct and requires understanding account derivation logic to catch. Report how both baseline and Otter handle it, even if Otter also misses it.
+- One deliberately hard case: the PDA seed collision example (Class 5) — it looks syntactically correct and requires understanding account derivation logic to catch. Report how both baseline and Mongoose handle it, even if Mongoose also misses it.
 
 ### Metrics
 
-| Metric | Baseline | Otter | What It Shows |
+| Metric | Baseline | Mongoose | What It Shows |
 |---|---|---|---|
 | True positive rate (vulnerable programs correctly flagged) | ? | ? | Raw detection capability |
 | False positive rate (fixed programs incorrectly flagged) | ? | ? | Precision — does it cry wolf? |
@@ -269,7 +269,7 @@ npm install
 # Run baseline
 npm run baseline -- --dataset ./sealevel-attacks --output baseline_results.json
 
-# Run Otter
+# Run Mongoose
 npm run otter -- --dataset ./sealevel-attacks --output otter_results.json
 
 # Generate comparison table

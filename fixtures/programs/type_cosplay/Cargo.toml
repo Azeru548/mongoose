@@ -1,7 +1,7 @@
 [package]
 name = "type_cosplay"
 version = "0.1.0"
-description = "Otter CI fixture: type cosplay (pinocchio)"
+description = "Mongoose CI fixture: type cosplay (pinocchio)"
 edition = "2021"
 
 [lib]

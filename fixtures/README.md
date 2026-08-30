@@ -1,4 +1,4 @@
-# Otter CI verifier fixtures
+# Mongoose CI verifier fixtures
 
 Minimal **Anchor 0.29** programs that mirror sealevel-attacks Classes 1–3. Used by GitHub Actions because upstream `coral-xyz/sealevel-attacks` targets Anchor **0.20** and is painful to build on modern toolchains.
 

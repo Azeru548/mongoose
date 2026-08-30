@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build + deploy Otter CI fixtures to a local solana-test-validator.
+# Build + deploy Mongoose CI fixtures to a local solana-test-validator.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

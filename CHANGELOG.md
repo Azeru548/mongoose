@@ -1,4 +1,4 @@
-# Otter improvement changelog
+# Mongoose improvement changelog
 
 | Stage | What You Tried | Evidence | Decision |
 |---|---|---|---|
@@ -11,7 +11,7 @@
 
 ## Eval artifacts
 
-- `otter_iter2.json` — Otter on 18 in-scope programs
+- `otter_iter2.json` — Mongoose on 18 in-scope programs
 - `baseline_results.json` — generic baseline on the same 18
 - `comparison_table.md` — per-program table + aggregates
 
@@ -19,4 +19,4 @@
 
 - Dataset: `coral-xyz/sealevel-attacks` (6 families × insecure/secure/recommended).
 - Detector transport: Groq `openai/gpt-oss-20b`; Baseline: Groq `allam-2-7b` (separate quota after Detector TPD exhaustion).
-- Verifier not exercised in this eval (`--skip-verify`); all Otter findings are Suspected/UNCONFIRMED.
+- Verifier not exercised in this eval (`--skip-verify`); all Mongoose findings are Suspected/UNCONFIRMED.
