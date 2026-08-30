@@ -1,0 +1,177 @@
+{
+  "total_count": 1,
+  "jobs": [
+    {
+      "id": 99285375000,
+      "run_id": 33321960715,
+      "workflow_name": "Otter Verifier CI",
+      "head_branch": "main",
+      "run_url": "https://api.github.com/repos/Azeru548/ottersec/actions/runs/33321960715",
+      "run_attempt": 1,
+      "node_id": "CR_kwDOUIOzh88AAAAXHd6YGA",
+      "head_sha": "ea2d129b450d1633be8d4ce2c27abdcea59df1ae",
+      "url": "https://api.github.com/repos/Azeru548/ottersec/actions/jobs/99285375000",
+      "html_url": "https://github.com/Azeru548/ottersec/actions/runs/33321960715/job/99285375000",
+      "status": "completed",
+      "conclusion": "failure",
+      "created_at": "2026-08-30T16:15:49Z",
+      "started_at": "2026-08-30T16:15:52Z",
+      "completed_at": "2026-08-30T16:17:29Z",
+      "name": "Build · Deploy · Prove Class 1–3",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-08-30T16:15:53Z",
+          "completed_at": "2026-08-30T16:15:54Z"
+        },
+        {
+          "name": "Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-08-30T16:15:54Z",
+          "completed_at": "2026-08-30T16:15:55Z"
+        },
+        {
+          "name": "Setup Node.js 20",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-08-30T16:15:55Z",
+          "completed_at": "2026-08-30T16:16:00Z"
+        },
+        {
+          "name": "Install npm dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-08-30T16:16:00Z",
+          "completed_at": "2026-08-30T16:16:05Z"
+        },
+        {
+          "name": "Install latest Rust",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-08-30T16:16:05Z",
+          "completed_at": "2026-08-30T16:16:06Z"
+        },
+        {
+          "name": "Cache cargo",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-08-30T16:16:06Z",
+          "completed_at": "2026-08-30T16:16:06Z"
+        },
+        {
+          "name": "Install Solana CLI 1.18.26",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-08-30T16:16:06Z",
+          "completed_at": "2026-08-30T16:16:40Z"
+        },
+        {
+          "name": "Toolchain versions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-08-30T16:16:40Z",
+          "completed_at": "2026-08-30T16:16:40Z"
+        },
+        {
+          "name": "Start solana-test-validator",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-08-30T16:16:40Z",
+          "completed_at": "2026-08-30T16:16:41Z"
+        },
+        {
+          "name": "Build and deploy programs",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 10,
+          "started_at": "2026-08-30T16:16:41Z",
+          "completed_at": "2026-08-30T16:17:26Z"
+        },
+        {
+          "name": "Run Verifier CI",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11,
+          "started_at": "2026-08-30T16:17:26Z",
+          "completed_at": "2026-08-30T16:17:26Z"
+        },
+        {
+          "name": "Print verifier_results.json",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-08-30T16:17:26Z",
+          "completed_at": "2026-08-30T16:17:26Z"
+        },
+        {
+          "name": "Upload artifact",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-08-30T16:17:26Z",
+          "completed_at": "2026-08-30T16:17:27Z"
+        },
+        {
+          "name": "Stop validator",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-08-30T16:17:27Z",
+          "completed_at": "2026-08-30T16:17:27Z"
+        },
+        {
+          "name": "Post Cache cargo",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 26,
+          "started_at": "2026-08-30T16:17:27Z",
+          "completed_at": "2026-08-30T16:17:27Z"
+        },
+        {
+          "name": "Post Setup Node.js 20",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 27,
+          "started_at": "2026-08-30T16:17:27Z",
+          "completed_at": "2026-08-30T16:17:27Z"
+        },
+        {
+          "name": "Post Checkout",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 28,
+          "started_at": "2026-08-30T16:17:27Z",
+          "completed_at": "2026-08-30T16:17:27Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 29,
+          "started_at": "2026-08-30T16:17:27Z",
+          "completed_at": "2026-08-30T16:17:27Z"
+        }
+      ],
+      "check_run_url": "https://api.github.com/repos/Azeru548/ottersec/check-runs/99285375000",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "runner_id": 1000000136,
+      "runner_name": "GitHub Actions 1000000136",
+      "runner_group_id": 0,
+      "runner_group_name": "GitHub Actions"
+    }
+  ]
+}
