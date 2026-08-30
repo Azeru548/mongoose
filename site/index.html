@@ -1097,7 +1097,16 @@
       .hero-right { display: none; }
       .hero-subtitle { margin-left: auto; margin-right: auto; }
       .hero-actions { justify-content: center; }
-      .hero-ticker { justify-content: center; flex-wrap: wrap; }
+      .hero-ticker {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin-top: 3rem;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
       .pipeline-grid { grid-template-columns: 1fr; }
       .vuln-grid { grid-template-columns: repeat(2, 1fr); }
       .results-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1120,7 +1129,17 @@
       .hero-badge { font-size: 0.6rem; padding: 0.4rem 0.8rem; }
       .hero-actions { flex-direction: column; align-items: stretch; }
       .hero-actions .btn { justify-content: center; }
-      .hero-ticker { flex-direction: column; gap: 0.8rem; align-items: center; }
+      .hero-ticker {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin-top: 3rem;
+        width: 100%;
+        flex-direction: column;
+        gap: 0.8rem;
+        align-items: center;
+      }
       .ticker-value { font-size: 1.4rem; }
       .section { padding: 3rem 1.2rem; }
       .section-full { padding: 3rem 1.2rem; }
@@ -1171,23 +1190,6 @@
     @keyframes blink-caret {
       from, to { border-color: transparent; }
       50% { border-color: var(--accent); }
-    }
-
-    /* ═══════════════════════════════════════════
-       PARALLAX LINES
-    ═══════════════════════════════════════════ */
-    .deco-lines {
-      position: absolute;
-      top: 0; right: 0;
-      width: 300px; height: 100%;
-      pointer-events: none;
-      opacity: 0.04;
-    }
-    .deco-lines div {
-      position: absolute;
-      width: 1px;
-      height: 100%;
-      background: var(--text);
     }
 
     /* ═══════════════════════════════════════════
@@ -1244,6 +1246,7 @@
       color: var(--green);
     }
   </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -1282,15 +1285,10 @@
        HERO
   ═══════════════════════════════════════════ -->
   <section class="hero" id="hero">
-    <div class="deco-lines" aria-hidden="true">
-      <div style="left:20%"></div><div style="left:40%"></div><div style="left:60%"></div><div style="left:80%"></div>
-    </div>
+    
     <div class="hero-grid">
       <div class="hero-left">
-        <div class="hero-badge reveal">
-          <span class="dot"></span>
-          micro1 Agentic Workflows Hackathon
-        </div>
+      
         <h1 class="reveal" style="transition-delay:0.1s">
           Every scanner <span class="strike">guesses</span>.
         </h1>
