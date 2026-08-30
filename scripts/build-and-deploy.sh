@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Build + deploy Class 1-3 insecure fixtures (+ signer secure control).
 # Writes output/deployed_programs.json mapping family/variant -> programId.
+# Uses committed fixtures/Cargo.lock with --locked (pinned indexmap etc. for platform-tools cargo 1.75).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -8,10 +9,6 @@ FIX="$ROOT/fixtures"
 OUT="$ROOT/output"
 RPC="${SOLANA_RPC_URL:-http://127.0.0.1:8899}"
 mkdir -p "$OUT" "$FIX/target/deploy" "$OUT/keys"
-
-# Remove old lockfiles that break cargo build-sbf (v4 vs Solana's older Cargo)
-rm -f "$FIX/Cargo.lock" 2>/dev/null || true
-find "$FIX" -name "Cargo.lock" -delete 2>/dev/null || true
 
 echo "==> Waiting for validator health at $RPC"
 for i in $(seq 1 90); do
@@ -50,18 +47,6 @@ PROGRAMS=(
 DEPLOYED="$OUT/deployed_programs.json"
 echo '{}' > "$DEPLOYED"
 
-cd "$FIX"
-rm -f "$FIX/Cargo.lock"
-
-downgrade_lockfile() {
-  local lf="$FIX/Cargo.lock"
-  if [[ -f "$lf" ]] && grep -q "^version = 4" "$lf"; then
-    echo "    downgrading Cargo.lock v4 -> v3 for Solana platform-tools"
-    sed -i.bak -E 's/^version = 4/version = 3/' "$lf"
-    rm -f "${lf}.bak"
-  fi
-}
-
 for entry in "${PROGRAMS[@]}"; do
   IFS='|' read -r CASE_ID CRATE_REL CRATE_NAME EXPECT_CLASS EXPECT_PROVEN <<<"$entry"
   SRC="$FIX/$CRATE_REL/src/lib.rs"
@@ -85,53 +70,9 @@ for entry in "${PROGRAMS[@]}"; do
   echo "    patched Anchor.toml for $CRATE_NAME"
 
   cp "$KP_OUT" "$KP_DEPLOY"
-  rm -f "$FIX/$CRATE_REL/Cargo.lock"
-  rm -f "$FIX/Cargo.lock"
-  export RUSTUP_TOOLCHAIN=stable
-  export PATH="$HOME/.cargo/bin:$PATH"
-  set +e
-  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
-  BUILD_RC=${PIPESTATUS[0]}
-  if [[ $BUILD_RC -ne 0 ]]; then
-    echo "    cargo build-sbf failed (rc=$BUILD_RC), trying +nightly..." >&2
-    cat /tmp/build-${CRATE_NAME}.log >&2
-    cargo +nightly build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
-    BUILD_RC=${PIPESTATUS[0]}
-  fi
-  if [[ $BUILD_RC -ne 0 ]]; then
-    echo "    build-sbf with system cargo failed, trying dependency pinning + retry..." >&2
-    cat /tmp/build-${CRATE_NAME}.log >&2
-    pushd "$FIX/$CRATE_REL" >/dev/null
-    cargo update -p zeroize_derive --precise 1.4.2 2>/dev/null || true
-    cargo update -p zeroize --precise 1.7.0 2>/dev/null || true
-    cargo update -p crypto-common --precise 0.1.6 2>/dev/null || true
-    popd >/dev/null
-    cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
-    BUILD_RC=${PIPESTATUS[0]}
-  fi
-  set -e
-  if [[ $BUILD_RC -ne 0 ]]; then
-    if grep -q "lock file version 4 requires" /tmp/build-${CRATE_NAME}.log; then
-      downgrade_lockfile
-      echo "    retrying cargo build-sbf after downgrade..."
-      export RUSTUP_TOOLCHAIN=stable
-      export PATH="$HOME/.cargo/bin:$PATH"
-      cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
-    elif grep -q "failed to parse manifest" /tmp/build-${CRATE_NAME}.log && grep -q "edition2024" /tmp/build-${CRATE_NAME}.log; then
-      echo "    edition2024 error — trying cargo update + retry..." >&2
-      rm -f "$FIX/$CRATE_REL/Cargo.lock" "$FIX/Cargo.lock"
-      pushd "$FIX/$CRATE_REL" >/dev/null
-      export PATH="$HOME/.cargo/bin:$PATH"
-      export RUSTUP_TOOLCHAIN=stable
-      cargo update 2>/dev/null || true
-      popd >/dev/null
-      cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
-    else
-      echo "cargo build-sbf failed (see /tmp/build-${CRATE_NAME}.log)" >&2
-      cat /tmp/build-${CRATE_NAME}.log >&2
-      exit $BUILD_RC
-    fi
-  fi
+
+  echo "    cargo build-sbf --locked --manifest-path $FIX/$CRATE_REL/Cargo.toml"
+  cargo build-sbf --locked --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
   if [[ ! -f "$SO" ]]; then
