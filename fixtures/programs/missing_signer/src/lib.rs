@@ -6,7 +6,6 @@ use pinocchio::{
 pinocchio_pubkey::declare_id!("9AkR8DCaU3iNzqHJr7msGHULVgAcmB1i4MKPcQENEQP5");
 
 entrypoint!(process_instruction);
-pinocchio::default_panic_handler!();
 
 pub fn process_instruction(
     _program_id: &Pubkey,
