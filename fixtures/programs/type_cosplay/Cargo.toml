@@ -9,4 +9,5 @@ crate-type = ["cdylib", "lib"]
 name = "type_cosplay"
 
 [dependencies]
-pinocchio = "0.8"
+pinocchio = "0.7"
+

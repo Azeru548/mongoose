@@ -9,4 +9,5 @@ crate-type = ["cdylib", "lib"]
 name = "missing_owner"
 
 [dependencies]
-pinocchio = "0.8"
+pinocchio = "0.7"
+
