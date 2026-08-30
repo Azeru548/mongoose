@@ -4,9 +4,10 @@ use pinocchio::{
     ProgramResult,
 };
 
-pinocchio::declare_id!("FdZRQCmitcGr8GtYaEKkgsxEFzGP7uhSvPRZDtGMr6Yp");
+pinocchio::pubkey::declare_id!("FdZRQCmitcGr8GtYaEKkgsxEFzGP7uhSvPRZDtGMr6Yp");
 
 entrypoint!(process_instruction);
+pinocchio::default_panic_handler!();
 
 pub fn process_instruction(
     _program_id: &Pubkey,
@@ -20,6 +21,6 @@ pub fn process_instruction(
         msg!("authority must sign");
         return Err(ProgramError::MissingRequiredSignature);
     }
-    msg!("GM {}", accounts[0].key());
+    msg!("GM");
     Ok(())
 }

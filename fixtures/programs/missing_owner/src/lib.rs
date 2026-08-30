@@ -3,9 +3,10 @@ use pinocchio::{
     account_info::AccountInfo, entrypoint, msg, pubkey::Pubkey, ProgramResult,
 };
 
-pinocchio::declare_id!("7sDbfGBWkC5bMEUa9FYiQsAuSAJ2gqL2L54JkXgVNtQC");
+pinocchio::pubkey::declare_id!("7sDbfGBWkC5bMEUa9FYiQsAuSAJ2gqL2L54JkXgVNtQC");
 
 entrypoint!(process_instruction);
+pinocchio::default_panic_handler!();
 
 pub fn process_instruction(
     _program_id: &Pubkey,
@@ -18,11 +19,7 @@ pub fn process_instruction(
     }
     let data = &accounts[0];
     let authority = &accounts[1];
-    msg!(
-        "touched {} lamports={} authority={}",
-        data.key(),
-        unsafe { data.borrow_lamports_unchecked() },
-        authority.key()
-    );
+    msg!("touched");
+    let _ = (data.key(), unsafe { data.borrow_lamports_unchecked() }, authority.key());
     Ok(())
 }

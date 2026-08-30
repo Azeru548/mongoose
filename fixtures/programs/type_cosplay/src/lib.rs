@@ -3,9 +3,10 @@ use pinocchio::{
     account_info::AccountInfo, entrypoint, msg, pubkey::Pubkey, ProgramResult,
 };
 
-pinocchio::declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
+pinocchio::pubkey::declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
 
 entrypoint!(process_instruction);
+pinocchio::default_panic_handler!();
 
 pub fn process_instruction(
     _program_id: &Pubkey,
@@ -19,11 +20,7 @@ pub fn process_instruction(
     let user = &accounts[0];
     let authority = &accounts[1];
     let data = unsafe { user.borrow_data_unchecked() };
-    msg!(
-        "accepted unchecked account {} len={} authority={}",
-        user.key(),
-        data.len(),
-        authority.key()
-    );
+    msg!("accepted unchecked account");
+    let _ = (user.key(), data.len(), authority.key());
     Ok(())
 }
