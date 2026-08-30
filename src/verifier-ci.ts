@@ -1,16 +1,16 @@
 /**
  * CI entrypoint: prove Class 1–3 findings against a local validator.
  *
- * Reads output/deployed_programs.json from scripts/build-and-deploy.sh,
- * runs Extractor → signals Detector → Verifier, writes verifier_results.json.
+ * These fixtures are hand-authored pinocchio programs with a known,
+ * intentional vulnerability class — we seed the finding directly instead
+ * of running the Extractor/Detector (which are built for Anchor-style code
+ * and are measured separately against the real sealevel-attacks dataset).
  */
 import "dotenv/config";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { detect } from "./detector.js";
-import { extractProgram } from "./extractor.js";
-import type { Finding, VerifiedFinding } from "./types.js";
+import type { Finding, ProgramSummary, VerifiedFinding } from "./types.js";
 import { defaultVerifierContext, verifyFindings } from "./verifier.js";
 
 interface DeployedProgram {
@@ -106,32 +106,31 @@ async function runCase(
 ): Promise<CiCaseResult> {
   const notes: string[] = [];
   process.env.OTTER_CASE_ID = id;
-  process.env.OTTER_SIGNALS_ONLY = process.env.OTTER_SIGNALS_ONLY ?? "1";
+
+  // These are hand-authored pinocchio fixtures with a known, intentional
+  // vulnerability — seed the finding directly rather than running the
+  // Anchor-oriented Extractor/Detector against non-Anchor code.
+  const summary: ProgramSummary = {
+    program_id: deployed.programId,
+    program_name: deployed.crateName,
+    source_files: [],
+    source_hash: "",
+    instructions: [],
+    account_types: [],
+  };
+
+  const seed: Finding[] = [
+    {
+      vulnerability_class: deployed.expectedClass as 1 | 2 | 3 | 4 | 5,
+      instruction_name: "process_instruction",
+      account_name: "authority",
+      reasoning: `CI seed finding for pinocchio fixture, expected class ${deployed.expectedClass}`,
+      confidence: "HIGH",
+    },
+  ];
 
   let findings: VerifiedFinding[] = [];
-  let extractor_error: string | null = null;
-
   try {
-    const summary = extractProgram(deployed.sourceDir);
-    const { findings: detected, dropped } = await detect(summary, [], id);
-    if (dropped.length) notes.push(`dropped ${dropped.length} finding(s)`);
-
-    const hasExpected = detected.some(
-      (f) => f.vulnerability_class === deployed.expectedClass,
-    );
-    const seed: Finding[] = hasExpected
-      ? detected
-      : [
-          ...detected,
-          {
-            vulnerability_class: deployed.expectedClass as 1 | 2 | 3 | 4 | 5,
-            instruction_name: summary.instructions[0]?.name ?? "unknown",
-            account_name: summary.instructions[0]?.accounts[0]?.name ?? "unknown",
-            reasoning: `CI seed finding for expected class ${deployed.expectedClass}`,
-            confidence: "HIGH",
-          },
-        ];
-
     const overlayPath = writeOverlayMap(deployMapPath, id, deployed);
     const vctx = {
       ...defaultVerifierContext(false),
@@ -140,8 +139,8 @@ async function runCase(
     };
     findings = await verifyFindings(summary, seed, vctx);
   } catch (err) {
-    extractor_error = err instanceof Error ? err.message : String(err);
-    notes.push(`case error: ${extractor_error}`);
+    const msg = err instanceof Error ? err.message : String(err);
+    notes.push(`case error: ${msg}`);
   }
 
   const proven = findings.filter((f) => f.verdict === "PROVEN");
@@ -165,7 +164,7 @@ async function runCase(
     expectedClass: deployed.expectedClass,
     expectProven: deployed.expectProven,
     programId: deployed.programId,
-    extractor_error,
+    extractor_error: null,
     findings,
     provenCount: proven.length,
     unconfirmedCount: unconfirmed.length,
@@ -194,7 +193,6 @@ async function main(): Promise<void> {
   mkdirSync(dirname(outPath), { recursive: true });
   process.env.SOLANA_RPC_URL =
     process.env.SOLANA_RPC_URL ?? "http://127.0.0.1:8899";
-  process.env.OTTER_SIGNALS_ONLY = process.env.OTTER_SIGNALS_ONLY ?? "1";
 
   const deployed = loadDeployed(deployedPath);
   const deployMap: Record<string, unknown> = { byCaseId: {} as Record<string, string> };
@@ -239,8 +237,6 @@ async function main(): Promise<void> {
     cases: results,
   };
   writeFileSync(outPath, JSON.stringify(payload, null, 2) + "\n");
-
-  // Also write a copy at repo root for easy download/commit.
   writeFileSync(
     join(process.cwd(), "verifier_results.json"),
     JSON.stringify(payload, null, 2) + "\n",
