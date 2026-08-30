@@ -71,13 +71,13 @@ for entry in "${PROGRAMS[@]}"; do
 
   cp "$KP_OUT" "$KP_DEPLOY"
 
-  echo "=== Cargo.lock before build (should be version 3, indexmap 2.13.1) ==="
+  echo "=== Cargo.lock before build (version 4, indexmap 2.13.1, with -Znext-lockfile-bump) ==="
   head -n 3 "$FIX/Cargo.lock" || true
   grep -A2 'name = "indexmap"' "$FIX/Cargo.lock" | head -n 3 || true
   ls -l "$FIX/Cargo.lock" || true
 
-  echo "    cargo build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked"
-  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked
+  echo "    cargo build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked -Znext-lockfile-bump"
+  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked -Znext-lockfile-bump
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
   if [[ ! -f "$SO" ]]; then
