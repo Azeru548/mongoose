@@ -1,7 +1,7 @@
 [package]
 name = "missing_owner"
 version = "0.1.0"
-description = "Otter CI fixture: missing owner check (native)"
+description = "Otter CI fixture: missing owner check (pinocchio)"
 edition = "2021"
 
 [lib]
@@ -9,4 +9,4 @@ crate-type = ["cdylib", "lib"]
 name = "missing_owner"
 
 [dependencies]
-solana-program = "1.18.26"
+pinocchio = "0.8"

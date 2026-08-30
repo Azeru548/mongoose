@@ -1,8 +1,9 @@
-use solana_program::{
-    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, pubkey::Pubkey,
+#![no_std]
+use pinocchio::{
+    account_info::AccountInfo, entrypoint, msg, pubkey::Pubkey, ProgramResult,
 };
 
-solana_program::declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
+pinocchio::declare_id!("BncXyGyoM758eEbnsDnNc2T68u6g47gWD6osXg98JfXB");
 
 entrypoint!(process_instruction);
 
@@ -17,13 +18,12 @@ pub fn process_instruction(
     }
     let user = &accounts[0];
     let authority = &accounts[1];
-    // Simulate try_borrow_data without type check
-    let data = user.try_borrow_data()?;
+    let data = unsafe { user.borrow_data_unchecked() };
     msg!(
         "accepted unchecked account {} len={} authority={}",
-        user.key,
+        user.key(),
         data.len(),
-        authority.key
+        authority.key()
     );
     Ok(())
 }

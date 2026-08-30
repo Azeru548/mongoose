@@ -1,8 +1,9 @@
-use solana_program::{
-    account_info::AccountInfo, entrypoint, entrypoint::ProgramResult, msg, pubkey::Pubkey,
+#![no_std]
+use pinocchio::{
+    account_info::AccountInfo, entrypoint, msg, pubkey::Pubkey, ProgramResult,
 };
 
-solana_program::declare_id!("7sDbfGBWkC5bMEUa9FYiQsAuSAJ2gqL2L54JkXgVNtQC");
+pinocchio::declare_id!("7sDbfGBWkC5bMEUa9FYiQsAuSAJ2gqL2L54JkXgVNtQC");
 
 entrypoint!(process_instruction);
 
@@ -20,8 +21,8 @@ pub fn process_instruction(
     msg!(
         "touched {} lamports={} authority={}",
         data.key(),
-        data.lamports(),
-        authority.key
+        unsafe { data.borrow_lamports_unchecked() },
+        authority.key()
     );
     Ok(())
 }
