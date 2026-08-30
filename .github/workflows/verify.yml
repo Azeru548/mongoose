@@ -48,28 +48,39 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Install Solana CLI 1.18.26
+      - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/v1.18.26/install)"
+          sh -c "$(curl -sSfL https://release.solana.com/v2.0.0/install)"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           solana --version
 
-      - name: Ensure latest cargo is active
+      - name: Override Solana's bundled cargo with system cargo
         run: |
-          rustup default stable
-          rustup update stable
-          export PATH="$HOME/.cargo/bin:$PATH"
-          rustc --version
+          # Solana bundles an old cargo. Force it to use our modern cargo.
+          SOLANA_BIN="$HOME/.local/share/solana/install/active_release/bin"
+          SYSTEM_CARGO=$(which cargo)
+          SYSTEM_RUSTC=$(which rustc)
+          # Remove Solana's bundled cargo/rustc
+          rm -f "$SOLANA_BIN/cargo" "$SOLANA_BIN/rustc" "$SOLANA_BIN/rustup"
+          # Symlink system versions
+          ln -s "$SYSTEM_CARGO" "$SOLANA_BIN/cargo"
+          ln -s "$SYSTEM_RUSTC" "$SOLANA_BIN/rustc"
+          # Verify
           cargo --version
-          echo "CARGO=$(which cargo)" >> $GITHUB_ENV
-          echo "RUSTC=$(which rustc)" >> $GITHUB_ENV
+          rustc --version
+
+      - name: Set build environment
+        run: |
+          echo "RUSTUP_TOOLCHAIN=stable" >> $GITHUB_ENV
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> $GITHUB_ENV
 
       - name: Toolchain versions
         run: |
           echo "node $(node -v)"
           solana --version
           rustc --version
+          cargo --version
 
       - name: Start solana-test-validator
         run: |

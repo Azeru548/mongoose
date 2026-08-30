@@ -87,49 +87,45 @@ for entry in "${PROGRAMS[@]}"; do
   cp "$KP_OUT" "$KP_DEPLOY"
   rm -f "$FIX/$CRATE_REL/Cargo.lock"
   rm -f "$FIX/Cargo.lock"
-  # Build from program dir to bypass workspace patch/lock issues
-  pushd "$FIX/$CRATE_REL" >/dev/null
-  # Nuclear: clear any patch that breaks modern cargo (Anchor 0.29 quirk)
-  # (workspace patch already removed, but keep as safety)
+  export RUSTUP_TOOLCHAIN=stable
   export PATH="$HOME/.cargo/bin:$PATH"
-  rustup default stable
   set +e
-  cargo +stable build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+  cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
   BUILD_RC=${PIPESTATUS[0]}
   if [[ $BUILD_RC -ne 0 ]]; then
-    echo "    cargo +stable build-sbf failed (rc=$BUILD_RC), trying +nightly..." >&2
+    echo "    cargo build-sbf failed (rc=$BUILD_RC), trying +nightly..." >&2
     cat /tmp/build-${CRATE_NAME}.log >&2
-    cargo +nightly build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+    cargo +nightly build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
     BUILD_RC=${PIPESTATUS[0]}
   fi
   if [[ $BUILD_RC -ne 0 ]]; then
-    echo "    both +stable/+nightly failed, trying dependency pinning + retry..." >&2
+    echo "    build-sbf with system cargo failed, trying dependency pinning + retry..." >&2
     cat /tmp/build-${CRATE_NAME}.log >&2
+    pushd "$FIX/$CRATE_REL" >/dev/null
     cargo update -p zeroize_derive --precise 1.4.2 2>/dev/null || true
     cargo update -p zeroize --precise 1.7.0 2>/dev/null || true
     cargo update -p crypto-common --precise 0.1.6 2>/dev/null || true
-    cargo +stable build-sbf 2>&1 | tee /tmp/build-${CRATE_NAME}.log
+    popd >/dev/null
+    cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" 2>&1 | tee /tmp/build-${CRATE_NAME}.log
     BUILD_RC=${PIPESTATUS[0]}
   fi
   set -e
-  popd >/dev/null
   if [[ $BUILD_RC -ne 0 ]]; then
     if grep -q "lock file version 4 requires" /tmp/build-${CRATE_NAME}.log; then
       downgrade_lockfile
       echo "    retrying cargo build-sbf after downgrade..."
-      pushd "$FIX/$CRATE_REL" >/dev/null
+      export RUSTUP_TOOLCHAIN=stable
       export PATH="$HOME/.cargo/bin:$PATH"
-      rustup default stable
-      cargo +stable build-sbf
-      popd >/dev/null
+      cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
     elif grep -q "failed to parse manifest" /tmp/build-${CRATE_NAME}.log && grep -q "edition2024" /tmp/build-${CRATE_NAME}.log; then
       echo "    edition2024 error — trying cargo update + retry..." >&2
       rm -f "$FIX/$CRATE_REL/Cargo.lock" "$FIX/Cargo.lock"
       pushd "$FIX/$CRATE_REL" >/dev/null
       export PATH="$HOME/.cargo/bin:$PATH"
+      export RUSTUP_TOOLCHAIN=stable
       cargo update 2>/dev/null || true
-      cargo +stable build-sbf
       popd >/dev/null
+      cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml"
     else
       echo "cargo build-sbf failed (see /tmp/build-${CRATE_NAME}.log)" >&2
       cat /tmp/build-${CRATE_NAME}.log >&2
