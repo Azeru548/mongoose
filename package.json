@@ -19,7 +19,8 @@
     "ci:deploy-fixtures": "bash scripts/ci/deploy-fixtures.sh",
     "ci:prove": "bash scripts/ci/run-prove.sh",
     "ci:build-deploy": "bash scripts/build-and-deploy.sh",
-    "verify:ci": "tsx src/verifier-ci.ts"
+    "verify:ci": "tsx src/verifier-ci.ts",
+    "report" : "tsx src/print-report.ts"
   },
   "dependencies": {
     "@solana/web3.js": "1.91.8",
