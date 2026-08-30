@@ -71,8 +71,17 @@ for entry in "${PROGRAMS[@]}"; do
 
   cp "$KP_OUT" "$KP_DEPLOY"
 
+  echo "=== Cargo.lock before build (should be version 3, indexmap 2.13.1) ==="
+  head -n 3 "$FIX/Cargo.lock" || true
+  grep -A2 'name = "indexmap"' "$FIX/Cargo.lock" | head -n 3 || true
+  ls -l "$FIX/Cargo.lock" || true
+  # Prevent modern cargo (1.98) from silently rewriting lockfile to version 4 before platform-tools reads it
+  chmod 444 "$FIX/Cargo.lock" || true
+
   echo "    cargo build-sbf --manifest-path $FIX/$CRATE_REL/Cargo.toml -- --locked"
   cargo build-sbf --manifest-path "$FIX/$CRATE_REL/Cargo.toml" -- --locked
+  # Restore write perms for next iteration's sed (not needed for Cargo.lock but keep consistent)
+  chmod 644 "$FIX/Cargo.lock" || true
 
   SO="$FIX/target/deploy/${CRATE_NAME}.so"
   if [[ ! -f "$SO" ]]; then
