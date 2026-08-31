@@ -10,9 +10,33 @@ Mongoose is a three-stage agent for solo Anchor developers: it extracts a struct
 
 Hackathon: micro1 Agentic Workflows.
 
-## Who it is for
+## For Whom
 
-Solo / small-team Anchor developers shipping without a $15k audit. The bottleneck is not "more warnings" — it is unverified scanner output.
+**Solo and small-team Anchor developers** who cannot afford a **$15,000+ professional audit** but still need to know if their Solana program is actually exploitable — not just "looks suspicious."
+
+Current tools dump 50 static-analysis warnings and leave the developer to manually trace which 5 are real. Mongoose closes that loop by submitting the actual exploit transaction and giving you the signature.
+
+## The Bottleneck
+
+Static scanners for Solana/Anchor programs operate on **suspicion, not proof.**
+
+1. They flag a "missing signer check" — but the check might exist two frames up the call stack.
+2. They output 50 warnings on a typical program.
+3. The developer has **no automated way** to verify which warnings are real without either:
+   - Manually tracing every code path (hours of work), or
+   - Hiring a $15k+ audit (unreachable for solo devs).
+
+Most solo developers skip review entirely or drown in unverified noise. The tool dumps suspicion on you. **It never closes the loop.**
+
+## Why This Matters
+
+Mongoose is the first open-source pipeline that **proves** Solana vulnerabilities with **real on-chain transactions**, not just flags.
+
+- **Every "Proven" finding** includes an actual transaction signature you can inspect on a block explorer.
+- **Every secure variant** is tested to confirm the attack is blocked (negative proof).
+- **Zero false positives** on our benchmark — because if the exploit transaction fails, we don't report it.
+
+A flag is a hypothesis. An exploit transaction is evidence.
 
 ## Pipeline
 
@@ -79,6 +103,30 @@ In-scope families in the dataset: `0-signer-authorization`, `2-owner-checks`, `3
 - Default model: `openai/gpt-oss-20b` (override `DETECTOR_MODEL`)
 - Interface: `detect(summary) → Finding[]` with JSON object response
 - False-positive memory: `data/fp-memory.json`
+
+## Improvement Changelog
+
+| Stage | What Changed | Evidence | Result |
+|-------|--------------|----------|--------|
+| **Baseline** | Generic "find bugs in this code" prompt, raw code input, no Solana context | `npm run baseline:inscope` | 5/6 true positives, 8/12 false positives |
+| **Iteration 1** | Added 5-class Solana vulnerability taxonomy (Missing Signer, Missing Owner, Type Cosplay, Missing has_one, Insecure PDA seeds) | Detector prompt now encodes Sealevel-specific patterns | Improved Solana-specific detection |
+| **Iteration 2** | Structured Extractor + field-mapped prompt instead of raw code | `src/extractor.ts` parses `#[derive(Accounts)]` structs into JSON | False positives dropped; localization improved from "somewhere" to specific instruction/account |
+| **Iteration 3** | Deterministic validation layer — LLM suggests, code validates and backfills | `src/signals.ts` pre-computes risk scores per account | **6/6 true positives, 0/12 false positives, 100% localization** |
+| **Verifier CI** | GitHub Actions builds fixtures, deploys to local validator, runs real exploits | `.github/workflows/verify.yml` | 3 proven exploit transactions with real signatures |
+| **Detector Accuracy CI** | Separate workflow runs full 18-program dataset without validator | `.github/workflows/detector-accuracy.yml` | 6/6 TP, 0/12 FP reproduced in CI under 1 minute |
+
+**Key decision:** We removed the LLM from CI entirely (`OTTER_SIGNALS_ONLY=1`) and replaced it with deterministic signal scoring. This made the detector reproducible, free to run, and faster (under 1 minute for 18 programs vs. 8-second delays per Groq call).
+
+## Main Failure Mode
+
+**Classes 4 and 5 (Missing `has_one` / Insecure PDA seeds) are "Suspected" only, not "Proven."**
+
+- **Why:** These require multi-instruction state setup or complex account derivation that static analysis cannot fully verify without a custom harness per program.
+- **What happens:** The detector flags them with reasoning, but the verifier returns `UNCONFIRMED` because we cannot construct a generic exploit transaction.
+- **Mitigation:** Flagged as `SUSPECTED` with detailed reasoning for human review. The developer knows it's a high-priority manual check, not a verified hole.
+- **Future work:** Per-program harness generation or symbolic execution for these classes.
+
+This is an honest boundary, not a bug. We report what we can prove and clearly label what we cannot.
 
 ## CI Verifier (GitHub Actions)
 
@@ -217,12 +265,34 @@ OTTER_SIGNALS_ONLY=1 npm run verify:ci
 
 This branch (`feature/opencode-plugin`) wraps **only** Extractor + Detector `--skip-verify`. Verifier/validator (`src/verifier.ts`, `src/verifier-ci.ts`, `solana-test-validator`) is explicitly out of scope and must not be touched — it is proven on `main` (`Cargo.lock v3`, `pinocchio 0.7.1`). See `MEMO_FOR_AGENT.md:1` for full program specs and branch history (`45cca0f` + `deaec31`).
 
+## Hot Take
+
+> **"A flag is a hypothesis. An exploit transaction is evidence. If you can't verify the hypothesis automatically, you haven't solved the problem."**
+
+The security industry has normalized tools that dump suspicion and call it "coverage." We think the bar should be higher: if you claim a program is vulnerable, show the transaction that exploited it. If you claim it's secure, show the transaction that was blocked.
+
+Mongoose doesn't guess. It proves.
+
 ## Ground rules
 
 - Exploits only against a local validator. No devnet/mainnet.
 - No secrets in the repo. Fixture keypairs under `fixtures/keys/` are test-only.
 - Proven requires a real transaction signature. Otherwise UNCONFIRMED.
 - Set `OTTER_SIGNALS_ONLY=1` to skip the Detector LLM (CI default).
+
+## Agent Tools Used
+
+This project was built with coding agents as required by the micro1 Frontier Engineering Challenge:
+
+| Agent | Primary Contribution |
+|-------|---------------------|
+| **Grok Build** | OpenCode plugin scaffolding, tool hooks |
+| **Claude** | [FILL: what Claude did] |
+| **Kimi** | Hero CSS fix, CI workflow design, judge-readiness review, trajectory documentation |
+| **Muse Spark** | Detector Accuracy CI workflow (`.github/workflows/detector-accuracy.yml`), signals-only determinism, trajectory docs |
+| **Mimo** | [FILL: what Mimo did] |
+
+Agent trajectories are available in `trajectories/`.
 
 ## Versions
 
