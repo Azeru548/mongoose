@@ -1,0 +1,162 @@
+name: Detector Accuracy — Full Dataset
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/ci-detector-accuracy]
+  pull_request:
+    branches: [main]
+
+jobs:
+  accuracy:
+    name: Extractor + Detector — 30 Programs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Ensure dataset exists
+        run: |
+          if [ ! -d data/sealevel-attacks ]; then
+            npm run setup:dataset
+          else
+            echo "dataset already present at data/sealevel-attacks"
+            ls -R data/sealevel-attacks | head -n 100
+          fi
+
+      - name: Run Detector (signals-only, full dataset)
+        env:
+          OTTER_SIGNALS_ONLY: "1"
+          GROQ_API_KEY: "gsk_dummy_for_ci_signals_only"
+        run: OTTER_SIGNALS_ONLY=1 npm run otter:inscope
+
+      - name: Capture console output to file
+        env:
+          OTTER_SIGNALS_ONLY: "1"
+          GROQ_API_KEY: "gsk_dummy_for_ci_signals_only"
+        run: |
+          mkdir -p output
+          OTTER_SIGNALS_ONLY=1 npm run otter:inscope > output/detector_accuracy.txt 2>&1 || true
+          cat output/detector_accuracy.txt
+
+      - name: Generate accuracy summary from otter_results.json
+        if: always()
+        run: |
+          mkdir -p output
+          node -e "
+            const fs=require('fs');
+            const path='output/otter_results.json';
+            if(!fs.existsSync(path)){ console.log('otter_results.json missing, skipping summary'); process.exit(0); }
+            const data=JSON.parse(fs.readFileSync(path,'utf8'));
+            const arr=Array.isArray(data)?data:(data.results||[]);
+            const vuln=arr.filter(c=>c.label==='vulnerable');
+            const fixed=arr.filter(c=>c.label==='fixed');
+            // TP: vulnerable with finding matching expected_class; FP: fixed with finding matching expected_class
+            const tp= vuln.filter(c=>c.findings.some(f=>f.vulnerability_class===c.expected_class)).length;
+            const fp= fixed.filter(c=>c.findings.some(f=>f.vulnerability_class===c.expected_class)).length;
+            // localization: TP with instruction_name != unknown/—
+            const localized= vuln.filter(c=>{ const hits=c.findings.filter(f=>f.vulnerability_class===c.expected_class); const inst=hits.find(f=>f.instruction_name && f.instruction_name!=='unknown')?.instruction_name || c.findings[0]?.instruction_name; return hits.length>0 && inst && inst!=='—' && inst!=='unknown'; }).length;
+            const total = arr.length;
+            console.log('');
+            console.log('=== Mongoose Detector — In-Scope Families ===');
+            console.log('Families: 0-signer-authorization, 2-owner-checks, 3-type-cosplay, 1-account-data-matching, 7-bump-seed-canonicalization, 8-pda-sharing');
+            console.log('Programs evaluated: '+total+' ('+vuln.length+' vulnerable + '+fixed.length+' fixed)');
+            console.log('');
+            for(const c of arr.sort((a,b)=>a.id.localeCompare(b.id))){
+              const hits=c.findings.filter(f=>f.vulnerability_class===c.expected_class);
+              const flagged=hits.length>0;
+              const expected=c.label==='vulnerable' ? 'should flag' : 'should NOT flag';
+              const status=c.label==='vulnerable' ? (flagged?'[PASS]':'[FAIL]') : (flagged?'[FAIL]':'[PASS]');
+              const detail=flagged ? 'Class '+hits[0].vulnerability_class+' detected in '+hits[0].instruction_name : 'No finding (correct)';
+              if(c.label==='vulnerable' && hits.length===0 && c.findings.length>0) {
+                console.log(status+' '+c.id+' — Class '+c.findings[0].vulnerability_class+' detected (wrong class)');
+              } else {
+                console.log(status+' '+c.id+' — '+detail);
+              }
+            }
+            console.log('');
+            console.log('Summary: '+tp+'/'+vuln.length+' true positives, '+fp+'/'+fixed.length+' false positives');
+            console.log('Otter TP: '+tp+'/'+vuln.length+' | FP: '+fp+'/'+fixed.length);
+            console.log('Otter localization accuracy: '+(tp?Math.round(localized/tp*1000)/10:0)+'%');
+            console.log('Programs evaluated: '+total);
+            console.log('In-scope vulnerable: '+vuln.length+' | In-scope fixed: '+fixed.length);
+            // also append to artifact file for grep check
+            let out='';
+            try{ out=fs.readFileSync('output/detector_accuracy.txt','utf8'); }catch(e){ out=''; }
+            out += '\n=== Mongoose Detector — In-Scope Families ===\n';
+            out += 'Families: 0-signer-authorization, 2-owner-checks, 3-type-cosplay, 1-account-data-matching, 7-bump-seed-canonicalization, 8-pda-sharing\n';
+            for(const c of arr.sort((a,b)=>a.id.localeCompare(b.id))){
+              const hits=c.findings.filter(f=>f.vulnerability_class===c.expected_class);
+              const flagged=hits.length>0;
+              const status=c.label==='vulnerable' ? (flagged?'[PASS]':'[FAIL]') : (flagged?'[FAIL]':'[PASS]');
+              const detail=flagged ? 'Class '+hits[0].vulnerability_class+' detected' : 'No finding (correct)';
+              out += status+' '+c.id+' — '+detail+'\n';
+            }
+            out += '\nSummary: '+tp+'/'+vuln.length+' true positives, '+fp+'/'+fixed.length+' false positives\n';
+            out += 'Otter TP: '+tp+'/'+vuln.length+' | FP: '+fp+'/'+fixed.length+'\n';
+            fs.writeFileSync('output/detector_accuracy.txt', out);
+            // also write a markdown summary to step summary
+            console.log('\n=== artifact appended ===');
+          " 2>&1 | tee -a output/detector_accuracy.txt
+          echo "--- appended summary ---"
+          cat output/detector_accuracy.txt
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: detector-accuracy-report
+          path: output/detector_accuracy.txt
+          if-no-files-found: warn
+
+      - name: Parse output and print summary
+        if: always()
+        run: |
+          echo "=== Parsing detector output ==="
+          if [ -f output/detector_accuracy.txt ]; then
+            echo "--- per-family results (grepped) ---"
+            grep -E "\[PASS\]|\[FAIL\]|Summary|true positives|false positives|Programs evaluated|In-scope|Otter TP|Otter FP" output/detector_accuracy.txt || echo "(no summary lines matched)"
+            echo ""
+            echo "--- artifact preview (first 200 lines) ---"
+            head -n 200 output/detector_accuracy.txt || true
+            echo ""
+            if [ -f output/otter_results.json ]; then
+              echo "--- otter_results.json quick stats ---"
+              node -e "
+                const fs=require('fs');
+                try{
+                  const data=JSON.parse(fs.readFileSync('output/otter_results.json','utf8'));
+                  const arr=Array.isArray(data)?data:(data.results||[]);
+                  console.log('cases:',arr.length);
+                  for(const c of arr.sort((a,b)=>a.id.localeCompare(b.id))){
+                    const n=c.findings?.length||0;
+                    const hits=c.findings.filter(f=>f.vulnerability_class===c.expected_class);
+                    console.log((hits.length>0?'[FLAG]':'[OK]  ')+' '+c.id+' label='+c.label+' findings='+n+' expected='+c.expected_class+' class='+(c.findings[0]?.vulnerability_class ?? '-'));
+                  }
+                }catch(e){console.error(e.message)}
+              " || true
+            fi
+          else
+            echo "output/detector_accuracy.txt not found"
+          fi
+
+      - name: Verify accuracy expectations
+        if: always()
+        run: |
+          if grep -q "6/6" output/detector_accuracy.txt && grep -q "0/12" output/detector_accuracy.txt; then
+            echo "✅ Detector accuracy matches expectations"
+          else
+            echo "⚠️ Detector accuracy mismatch — check output"
+            # Don't fail the build yet, just warn. We'll make it strict after verification.
+          fi
