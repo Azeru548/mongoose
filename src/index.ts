@@ -28,7 +28,9 @@ async function main(): Promise<void> {
       await cmdExtract(args.program ?? args.dataset);
       return;
     case "otter":
-      requireGroqApiKey();
+      if (process.env.OTTER_SIGNALS_ONLY !== "1" && process.env.OTTER_SIGNALS_ONLY !== "true") {
+        requireGroqApiKey();
+      }
       await cmdOtter(args);
       return;
     case "baseline":
