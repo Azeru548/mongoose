@@ -20,16 +20,17 @@
     "ci:prove": "bash scripts/ci/run-prove.sh",
     "ci:build-deploy": "bash scripts/build-and-deploy.sh",
     "verify:ci": "tsx src/verifier-ci.ts",
-    "report" : "tsx src/print-report.ts"
+    "report": "tsx src/print-report.ts"
   },
   "dependencies": {
     "@solana/web3.js": "1.91.8",
-    "rpc-websockets": "7.5.1",
     "dotenv": "^16.4.5",
     "openai": "^4.56.0",
+    "rpc-websockets": "7.5.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@opencode-ai/plugin": "^1.18.25",
     "@types/node": "^20.12.7",
     "tsx": "^4.7.2",
     "typescript": "~5.4.5"

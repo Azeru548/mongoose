@@ -1,264 +1,110 @@
-/**
- * CI entrypoint: prove Class 1–3 findings against a local validator.
- *
- * These fixtures are hand-authored pinocchio programs with a known,
- * intentional vulnerability class — we seed the finding directly instead
- * of running the Extractor/Detector (which are built for Anchor-style code
- * and are measured separately against the real sealevel-attacks dataset).
- */
-import "dotenv/config";
-import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import type { Finding, ProgramSummary, VerifiedFinding } from "./types.js";
-import { defaultVerifierContext, verifyFindings } from "./verifier.js";
+﻿export const VULN_CLASSES = {
+  1: "missing_signer_check",
+  2: "missing_owner_check",
+  3: "account_type_confusion",
+  4: "missing_relationship_constraint",
+  5: "insecure_pda_seeds",
+} as const;
 
-interface DeployedProgram {
-  programId: string;
-  soPath: string;
-  keypairPath: string;
-  sourceDir: string;
-  crateName: string;
-  expectedClass: number;
-  expectProven: boolean;
+export type VulnClass = 1 | 2 | 3 | 4 | 5;
+export type Confidence = "HIGH" | "MEDIUM" | "LOW";
+export type Verdict = "PROVEN" | "UNCONFIRMED";
+export type CaseLabel = "vulnerable" | "fixed";
+
+export interface AccountSummary {
+  name: string;
+  rust_type: string;
+  is_signer: boolean;
+  is_mut: boolean;
+  owner_constraint: string | null;
+  has_one: string[];
+  seeds: string | null;
+  has_discriminator: boolean;
+  other_constraints: string[];
 }
 
-type DeployedMap = Record<string, DeployedProgram>;
+export interface InstructionSummary {
+  name: string;
+  accounts_struct: string;
+  extra_args: string[];
+  accounts: AccountSummary[];
+  handler_checks: string[];
+  constraint_summary: string;
+  handler_source: string;
+}
 
-export interface CiCaseResult {
+export interface AccountTypeSummary {
+  name: string;
+  has_anchor_discriminator: boolean;
+  fields: string[];
+}
+
+export interface ProgramSummary {
+  program_id: string;
+  program_name: string;
+  source_files: string[];
+  source_hash: string;
+  instructions: InstructionSummary[];
+  account_types: AccountTypeSummary[];
+}
+
+export interface Finding {
+  vulnerability_class: VulnClass;
+  instruction_name: string;
+  account_name: string;
+  reasoning: string;
+  confidence: Confidence;
+}
+
+export interface VerifiedFinding extends Finding {
+  verdict: Verdict;
+  exploit_transaction: string | null;
+  pre_state: Record<string, unknown> | null;
+  post_state: Record<string, unknown> | null;
+  notes: string;
+}
+
+export interface DatasetCase {
   id: string;
-  expectedClass: number;
-  expectProven: boolean;
-  programId: string;
+  family: string;
+  variant: string;
+  label: CaseLabel;
+  expected_class: VulnClass | null;
+  in_scope: boolean;
+  program_dir: string;
+}
+
+export interface CaseResult {
+  id: string;
+  family: string;
+  variant: string;
+  label: CaseLabel;
+  expected_class: VulnClass | null;
+  in_scope: boolean;
+  extractor: ProgramSummary | null;
   extractor_error: string | null;
+  api_error: string | null;
   findings: VerifiedFinding[];
-  provenCount: number;
-  unconfirmedCount: number;
-  errorCount: number;
-  ok: boolean;
-  notes: string[];
+  dropped_findings: Finding[];
+  runtime_ms: number;
 }
 
-function loadDeployed(path: string): DeployedMap {
-  if (!existsSync(path)) {
-    throw new Error(`missing deployed programs file: ${path}`);
-  }
-  return JSON.parse(readFileSync(path, "utf8")) as DeployedMap;
+export interface FalsePositiveRecord {
+  instruction_name: string;
+  account_name: string;
+  vulnerability_class: VulnClass;
+  reason: string;
 }
 
-function printFinding(f: VerifiedFinding): void {
-  const sig = f.exploit_transaction ?? "-";
-  console.log(
-    `  [${f.verdict}] class ${f.vulnerability_class} ${f.instruction_name}.${f.account_name} sig=${sig}`,
-  );
-  if (f.notes) console.log(`    notes: ${f.notes}`);
+export interface CliArgs {
+  command: string;
+  dataset?: string;
+  program?: string;
+  output?: string;
+  baseline?: string;
+  otter?: string;
+  skipVerify?: boolean;
+  inScope?: boolean;
+  families?: string[];
+  limit?: number;
 }
-
-function writeOverlayMap(
-  deployMapPath: string,
-  id: string,
-  deployed: DeployedProgram,
-): string {
-  const overlayPath = join(
-    dirname(deployMapPath),
-    `deploy-map-${deployed.crateName}.json`,
-  );
-  const base = existsSync(deployMapPath)
-    ? (JSON.parse(readFileSync(deployMapPath, "utf8")) as Record<string, unknown>)
-    : {};
-  const entry = {
-    programId: deployed.programId,
-    soPath: deployed.soPath,
-    keypairPath: deployed.keypairPath,
-    caseIds: [id],
-  };
-  writeFileSync(
-    overlayPath,
-    JSON.stringify(
-      {
-        ...base,
-        [deployed.crateName]: entry,
-        byCaseId: {
-          ...((base.byCaseId as Record<string, string>) ?? {}),
-          [id]: deployed.crateName,
-        },
-        missing_signer:
-          deployed.crateName === "missing_signer" ||
-          deployed.crateName === "missing_signer_secure"
-            ? entry
-            : base.missing_signer,
-        missing_owner:
-          deployed.crateName === "missing_owner" ? entry : base.missing_owner,
-        type_cosplay:
-          deployed.crateName === "type_cosplay" ? entry : base.type_cosplay,
-      },
-      null,
-      2,
-    ) + "\n",
-  );
-  return overlayPath;
-}
-
-async function runCase(
-  id: string,
-  deployed: DeployedProgram,
-  deployMapPath: string,
-): Promise<CiCaseResult> {
-  const notes: string[] = [];
-  process.env.OTTER_CASE_ID = id;
-
-  // These are hand-authored pinocchio fixtures with a known, intentional
-  // vulnerability — seed the finding directly rather than running the
-  // Anchor-oriented Extractor/Detector against non-Anchor code.
-  const summary: ProgramSummary = {
-    program_id: deployed.programId,
-    program_name: deployed.crateName,
-    source_files: [],
-    source_hash: "",
-    instructions: [],
-    account_types: [],
-  };
-
-  const seed: Finding[] = [
-    {
-      vulnerability_class: deployed.expectedClass as 1 | 2 | 3 | 4 | 5,
-      instruction_name: "process_instruction",
-      account_name: "authority",
-      reasoning: `CI seed finding for pinocchio fixture, expected class ${deployed.expectedClass}`,
-      confidence: "HIGH",
-    },
-  ];
-
-  let findings: VerifiedFinding[] = [];
-  try {
-    const overlayPath = writeOverlayMap(deployMapPath, id, deployed);
-    const vctx = {
-      ...defaultVerifierContext(false),
-      deployMapPath: overlayPath,
-      caseId: id,
-    };
-    findings = await verifyFindings(summary, seed, vctx);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    notes.push(`case error: ${msg}`);
-  }
-
-  const proven = findings.filter((f) => f.verdict === "PROVEN");
-  const unconfirmed = findings.filter((f) => f.verdict === "UNCONFIRMED");
-  const errors = findings.filter((f) =>
-    (f.notes ?? "").toLowerCase().includes("exploit attempt failed"),
-  );
-
-  const hasProven = proven.length > 0;
-  const ok = deployed.expectProven ? hasProven : !hasProven;
-  if (!ok) {
-    notes.push(
-      deployed.expectProven
-        ? "EXPECTED PROVEN but got none"
-        : "EXPECTED no PROVEN (secure control) but got PROVEN",
-    );
-  }
-
-  return {
-    id,
-    expectedClass: deployed.expectedClass,
-    expectProven: deployed.expectProven,
-    programId: deployed.programId,
-    extractor_error: null,
-    findings,
-    provenCount: proven.length,
-    unconfirmedCount: unconfirmed.length,
-    errorCount: errors.length,
-    ok,
-    notes,
-  };
-}
-
-function anchorDiscHex(ixName: string): string {
-  return createHash("sha256")
-    .update(`global:${ixName}`)
-    .digest()
-    .subarray(0, 8)
-    .toString("hex");
-}
-
-async function main(): Promise<void> {
-  const deployedPath =
-    process.env.OTTER_DEPLOYED_PROGRAMS ??
-    join(process.cwd(), "output", "deployed_programs.json");
-  const outPath =
-    process.env.OTTER_VERIFIER_RESULTS ??
-    join(process.cwd(), "output", "verifier_results.json");
-
-  mkdirSync(dirname(outPath), { recursive: true });
-  process.env.SOLANA_RPC_URL =
-    process.env.SOLANA_RPC_URL ?? "http://127.0.0.1:8899";
-
-  const deployed = loadDeployed(deployedPath);
-  const deployMap: Record<string, unknown> = { byCaseId: {} as Record<string, string> };
-  for (const [id, d] of Object.entries(deployed)) {
-    (deployMap.byCaseId as Record<string, string>)[id] = d.crateName;
-    deployMap[d.crateName] = {
-      programId: d.programId,
-      soPath: d.soPath,
-      keypairPath: d.keypairPath,
-      caseIds: [id],
-    };
-  }
-  const deployMapPath = join(process.cwd(), "output", "deploy-map.json");
-  writeFileSync(deployMapPath, JSON.stringify(deployMap, null, 2) + "\n");
-  process.env.OTTER_DEPLOY_MAP = deployMapPath;
-
-  console.log("=== Otter Verifier CI ===");
-  console.log(`RPC: ${process.env.SOLANA_RPC_URL}`);
-  console.log(`Deployed programs: ${Object.keys(deployed).length}`);
-  console.log(`Discriminator(log_message)=${anchorDiscHex("log_message")}`);
-
-  const results: CiCaseResult[] = [];
-  for (const [id, d] of Object.entries(deployed)) {
-    console.log(
-      `\n--- ${id} (expectProven=${d.expectProven}, class=${d.expectedClass}) ---`,
-    );
-    const r = await runCase(id, d, deployMapPath);
-    results.push(r);
-    for (const f of r.findings) printFinding(f);
-    console.log(
-      `  summary: proven=${r.provenCount} unconfirmed=${r.unconfirmedCount} ok=${r.ok}`,
-    );
-    if (r.notes.length) console.log(`  notes: ${r.notes.join("; ")}`);
-  }
-
-  const provenTotal = results.reduce((n, r) => n + r.provenCount, 0);
-  const failed = results.filter((r) => !r.ok);
-  const payload = {
-    generated_at: new Date().toISOString(),
-    rpc: process.env.SOLANA_RPC_URL,
-    provenTotal,
-    cases: results,
-  };
-  writeFileSync(outPath, JSON.stringify(payload, null, 2) + "\n");
-  writeFileSync(
-    join(process.cwd(), "verifier_results.json"),
-    JSON.stringify(payload, null, 2) + "\n",
-  );
-
-  console.log(`\nWrote ${outPath}`);
-  console.log(`Wrote verifier_results.json`);
-  console.log(`TOTAL PROVEN: ${provenTotal}`);
-  console.log(`CASES OK: ${results.length - failed.length}/${results.length}`);
-
-  if (provenTotal < 1) {
-    console.error("No PROVEN findings — failing CI");
-    process.exit(1);
-  }
-  if (failed.length) {
-    console.error("Some cases missed expectations:");
-    for (const f of failed) console.error(`  - ${f.id}: ${f.notes.join("; ")}`);
-    process.exit(1);
-  }
-}
-
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});

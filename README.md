@@ -118,6 +118,105 @@ OTTER_SIGNALS_ONLY=1 npm run verify:ci
 
 Fixtures under `fixtures/programs/` are Anchor **0.29** equivalents of sealevel-attacks Classes 1–3 (upstream corpus is Anchor 0.20).
 
+## OpenCode Plugin (Mongoose — detector only, no validator)
+
+Mongoose's **Extractor + Detector** (signals-only, `--skip-verify`) are also exposed as an [OpenCode](https://opencode.ai) plugin so you can run them from any OpenCode session without leaving the TUI. The Verifier/validator flow is **not** wrapped — it stays in `scripts/build-and-deploy.sh` + `npm run verify:ci` and is proven on `main`.
+
+### What the plugin provides
+
+| Surface | Name | What it does |
+|---|---|---|
+| **Tool** | `mongoose_detect` | Calls `extractProgram(programPath)` (`src/extractor.ts:16`) → `detect(summary)` (`src/detector.ts:104`) with `OTTER_SIGNALS_ONLY=1` set programmatically (deterministic signals, no Groq). Returns a formatted list of `Class / instruction.account (confidence) + reasoning`. |
+| **Slash command** | `/mongoose:report` (also `/mongoose-report` hyphen alias) | Reads `output/verifier_results.json` (or `verifier_results.json` at repo root) and prints the same human-readable layout as `src/print-report.ts:37` (`MONGOOSE — VULNERABILITY VERIFICATION REPORT` with `Program / Expected / Result / [PROVEN] Exploit transaction: …` or `[BLOCKED / UNCONFIRMED]`). Reuses that formatter directly — no LLM reimplementation. |
+
+Files: `.opencode/plugin/mongoose.ts:1` (plugin entry, `Plugin` from `@opencode-ai/plugin@1.18.25`), `.opencode/command/mongoose-report.md:1` (slash-command registration, template `$ARGUMENTS` only — hook injects the report). Plugin is auto-discovered from `.opencode/plugin/` (no `opencode.json` entry needed) and loaded once at OpenCode startup.
+
+### Prerequisites
+
+```bash
+node -v          # 20.x
+npm install      # installs @opencode-ai/plugin, zod, @solana/web3.js, tsx, etc.
+# opencode 1.18.x already installed (npm i -g opencode-ai or via npm script)
+opencode --version  # 1.18.x
+```
+
+No Solana CLI / validator needed for the plugin — it is **skip-verify only**. For the full `PROVEN` flow, see [CI Verifier](#ci-verifier-github-actions).
+
+### Usage — tool `mongoose_detect`
+
+In any OpenCode TUI session (after restart so the new file is picked up):
+
+> **Prompt the agent naturally:** “use mongoose_detect to scan data/sealevel-attacks/programs/0-signer-authorization/insecure/src”
+
+Or directly via the tool API (headless test):
+
+```bash
+npx tsx -e "
+import pluginFactory from './.opencode/plugin/mongoose.ts';
+const plugin = await pluginFactory({directory: process.cwd(), worktree: process.cwd(), client:{}, project:{}, serverUrl: new URL('http://localhost'), \$:{} });
+const tool = plugin.tool.mongoose_detect;
+const out = await tool.execute({programPath: 'data/sealevel-attacks/programs/0-signer-authorization/insecure/src'}, {directory: process.cwd(), worktree: process.cwd(), sessionID:'t', messageID:'m', agent:'t', abort:new AbortController().signal, metadata:()=>{}, ask:async()=>{}});
+console.log(out);
+"
+```
+
+**Input schema (Zod):** `programPath: string` (required) — path to an Anchor program's `src/` directory. Can be absolute or relative to the session's `directory`/`worktree` (plugin resolves via `isAbsolute`/`resolve`). Examples:
+
+- `data/sealevel-attacks/programs/0-signer-authorization/insecure/src` → **Class 1 HIGH** (`log_message.authority`, `is_signer=false`, `src/signals.ts:66`)
+- `data/sealevel-attacks/programs/2-owner-checks/insecure/src` → Class 2
+- `data/sealevel-attacks/programs/3-type-cosplay/insecure/src` → Class 3
+- `data/sealevel-attacks/programs/1-account-data-matching/insecure/src` → Class 4 (Suspected)
+- `fixtures/programs/missing_signer` → **Extractor error** (`no #[derive(Accounts)]` — fixtures are `pinocchio 0.7.1` minimal, not Anchor; `extractor.ts:37` refuses to guess — use sealevel-attacks paths for the tool)
+
+**Output:** header `Mongoose detect — <resolved path> / Program: <name> (<program_id>) / Instructions: …` + `Found N finding(s):` or `No findings — all checked accounts have required constraints.` Each finding: `[Class 1: Missing signer check] log_message.authority (HIGH) / Reasoning: Deterministic: …`. Same `CLASS_NAMES` as `src/print-report.ts:29`.
+
+**Notes:**
+- Sets `OTTER_SIGNALS_ONLY=1` programmatically inside `execute` (save/restore `prev`), so the Detector never calls Groq in this tool — pure `signals.ts:46` deterministic.
+- Dynamic `import("../../src/extractor.js")` / `import("../../src/detector.js")` (`.js` for `tsx`/`Bun` remap) keeps plugin startup fast and avoids ESM cycles.
+
+### Usage — slash command `/mongoose:report`
+
+```bash
+# 1. Generate the file (once, with validator):
+solana-test-validator --reset --quiet &
+./scripts/build-and-deploy.sh
+OTTER_SIGNALS_ONLY=1 npm run verify:ci
+# or: npm run report -- output/verifier_results.json
+
+# 2. In OpenCode TUI:
+/mongoose:report
+# also works as /mongoose-report (hyphen) — file is mongoose-report.md (colon invalid on Windows), hook handles both
+```
+
+**Behavior:** hook `command.execute.before:123` in `mongoose.ts` checks `input.command` ∈ `{mongoose:report, mongoose-report, mongoose_report}` (strips leading `/`), looks up `output/verifier_results.json` candidates (`join(worktree,"output/verifier_results.json")`, `join(worktree,"verifier_results.json")`, `join(cwd,"output/verifier_results.json")`), `JSON.parse` + `formatVerifierReport(data)` (`mongoose.ts:34`, mirrors `print-report.ts:37`).
+
+- **If found:** literal report string via `output.parts = [{type:"text", text}]` — no wrapper:
+  ```
+  ============================================================
+    MONGOOSE — VULNERABILITY VERIFICATION REPORT
+  ============================================================
+    Run: 2026-08-31T00:00:00.000Z
+    Total proven exploits: 3
+  …
+    [PROVEN] Missing signer check — process_instruction(authority)
+      Exploit transaction: 5FakeSig…
+  ```
+- **If missing:** `No verifier results found. Checked: … To generate: solana-test-validator …` (`mongoose.ts:137`) — tells user to run the 3 commands above, with `README.md` CI/Reproduction links.
+
+**Verified:** `opencode debug config` in a fresh process shows `plugin: ["file:///…/mongoose.ts"]` + `command.mongoose-report` (`template: "$ARGUMENTS"` after `deaec31`), `npx tsc --noEmit --skipLibCheck` 0 errors, `npx tsx` headless hook test renders full report with `3× PROVEN, 1× UNCONFIRMED` (dummy `output/verifier_results.json` gitignored via `.gitignore:5`).
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `mongoose_detect` not in tool list / `/mongoose:report` shows template text only | Session started before ` .opencode/plugin/mongoose.ts` existed — plugins load once at startup (skill `customize-opencode`: `quit and restart opencode`) | Quit `opencode` (session `7872` etc.) and start a fresh session in repo |
+| `Extractor: no #[derive(Accounts)] structs` | Pointed tool at a `pinocchio` fixture (`fixtures/programs/missing_signer`) instead of an Anchor `src/` | Use a `data/sealevel-attacks/…/insecure/src` path |
+| `No verifier results found` | Never ran `scripts/build-and-deploy.sh` + `verify:ci`, or ran in different `worktree` | Run the 3 commands above, or download CI artifact `mongoose-verifier-results` from GitHub Actions |
+
+### Scope & non-goals (time-boxed)
+
+This branch (`feature/opencode-plugin`) wraps **only** Extractor + Detector `--skip-verify`. Verifier/validator (`src/verifier.ts`, `src/verifier-ci.ts`, `solana-test-validator`) is explicitly out of scope and must not be touched — it is proven on `main` (`Cargo.lock v3`, `pinocchio 0.7.1`). See `MEMO_FOR_AGENT.md:1` for full program specs and branch history (`45cca0f` + `deaec31`).
+
 ## Ground rules
 
 - Exploits only against a local validator. No devnet/mainnet.
