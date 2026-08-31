@@ -118,6 +118,49 @@ OTTER_SIGNALS_ONLY=1 npm run verify:ci
 
 Fixtures under `fixtures/programs/` are Anchor **0.29** equivalents of sealevel-attacks Classes 1–3 (upstream corpus is Anchor 0.20).
 
+## CI Detector Accuracy — Full Dataset (no validator)
+
+Source-only regression for the landing-page claim **6/6 true positives, 0/12 false positives, 100% localization** on 30 `sealevel-attacks` cases (18 in-scope: 6 vulnerable + 12 fixed across 6 families). No Solana CLI, no validator, no exploits — pure `Extractor + Detector` in `OTTER_SIGNALS_ONLY=1` mode.
+
+Workflow: `.github/workflows/detector-accuracy.yml:1` — **Detector Accuracy — Full Dataset** (`ubuntu-latest`, 10 min timeout).
+
+| Trigger | Detail |
+|---|---|
+| `workflow_dispatch` | Manual run from GitHub UI |
+| `push` to `feature/ci-detector-accuracy` | Auto on this branch |
+| `pull_request` to `main` | PR gate |
+
+Steps:
+
+1. `actions/checkout@v4` + `actions/setup-node@v4` (Node 20) + `npm ci`
+2. `if [ ! -d data/sealevel-attacks ]; then npm run setup:dataset; fi` — clones `coral-xyz/sealevel-attacks` if not cached
+3. `OTTER_SIGNALS_ONLY=1 npm run otter:inscope` (Extractor + deterministic signals, no Groq — `src/index.ts:31` skips `GROQ_API_KEY` when `OTTER_SIGNALS_ONLY=1`)
+4. `OTTER_SIGNALS_ONLY=1 npm run otter:inscope > output/detector_accuracy.txt 2>&1 || true` — captures full console output
+5. Generate summary from `output/otter_results.json` (TP = vulnerable with `vulnerability_class === expected_class`, FP = fixed with same) and append `[PASS]/[FAIL]` table + `Summary: 6/6 true positives, 0/12 false positives` to `detector_accuracy.txt`
+6. `actions/upload-artifact@v4` → `detector-accuracy-report` (`output/detector_accuracy.txt`)
+7. Parse + `grep -q "6/6" && grep -q "0/12"` — warns (non-blocking) if expectations drift
+
+Run manually:
+
+1. Push to `feature/ci-detector-accuracy` or open **Actions → Detector Accuracy — Full Dataset → Run workflow**
+2. When green, download `detector-accuracy-report` → `detector_accuracy.txt` contains:
+   ```
+   === Mongoose Detector — In-Scope Families ===
+   Families: 0-signer-authorization, 2-owner-checks, 3-type-cosplay, 1-account-data-matching, 7-bump-seed-canonicalization, 8-pda-sharing
+   [PASS] 0-signer-authorization/insecure — Class 1 detected
+   [PASS] 0-signer-authorization/secure — No finding (correct)
+   ...
+   Summary: 6/6 true positives, 0/12 false positives
+   ```
+
+Local reproduce (no secrets needed):
+
+```bash
+OTTER_SIGNALS_ONLY=1 npm run otter:inscope
+cat output/detector_accuracy.txt
+cat output/otter_results.json | jq '.[].id, .[].findings'
+```
+
 ## OpenCode Plugin (Mongoose — detector only, no validator)
 
 Mongoose's **Extractor + Detector** (signals-only, `--skip-verify`) are also exposed as an [OpenCode](https://opencode.ai) plugin so you can run them from any OpenCode session without leaving the TUI. The Verifier/validator flow is **not** wrapped — it stays in `scripts/build-and-deploy.sh` + `npm run verify:ci` and is proven on `main`.
